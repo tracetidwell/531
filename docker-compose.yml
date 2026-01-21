@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/531.db
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+
+  # TODO: Add frontend service when Flutter web is ready
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "8080:80"
+  #   depends_on:
+  #     - backend
