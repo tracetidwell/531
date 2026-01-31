@@ -1,0 +1,1 @@
+adb install -r /home/trace/Documents/531/frontend/build/app/outputs/flutter-apk/app-release.apk 

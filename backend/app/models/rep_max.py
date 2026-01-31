@@ -17,10 +17,10 @@ class RepMax(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
 
-    lift_type = Column(SQLEnum(LiftType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    lift_type = Column(SQLEnum(LiftType, name='lifttype', create_type=False), nullable=False, index=True)
     reps = Column(Integer, nullable=False)  # 1-12
     weight = Column(Float, nullable=False)
-    weight_unit = Column(SQLEnum(WeightUnit, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    weight_unit = Column(SQLEnum(WeightUnit, name='weightunit', create_type=False), nullable=False)
 
     calculated_1rm = Column(Float, nullable=False)  # Using Epley formula
     achieved_date = Column(Date, nullable=False)

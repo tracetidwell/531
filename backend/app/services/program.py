@@ -9,7 +9,7 @@ from app.models.program import (
     Program, ProgramTemplate, TrainingMax, TrainingMaxHistory,
     LiftType, ProgramStatus, TrainingMaxReason
 )
-from app.models.workout import Workout, WorkoutMainLift, WeekType
+from app.models.workout import Workout, WorkoutMainLift, WeekType, WorkoutStatus
 from app.models.user import User
 from app.schemas.program import (
     ProgramCreateRequest, ProgramResponse, ProgramDetailResponse,
@@ -168,7 +168,7 @@ class ProgramService:
         # Create training maxes for each lift
         training_maxes_dict = {}
         for lift in LiftType:
-            tm_value = getattr(program_data.training_maxes, lift.value)
+            tm_value = getattr(program_data.training_maxes, lift.value.lower())
 
             training_max = TrainingMax(
                 program_id=program.id,
@@ -176,7 +176,7 @@ class ProgramService:
                 value=tm_value,
                 effective_date=program_data.start_date,
                 cycle_number=1,
-                reason="initial"
+                reason=TrainingMaxReason.INITIAL
             )
 
             db.add(training_max)
@@ -203,7 +203,8 @@ class ProgramService:
                         "exercise_id": acc.exercise_id,
                         "sets": acc.sets,
                         "reps": acc.reps,
-                        "weight_type": "fixed"
+                        "weight_type": "fixed",
+                        "circuit_group": acc.circuit_group
                     }
                     for acc in accessories_data
                 ]
@@ -239,7 +240,8 @@ class ProgramService:
                         "exercise_id": acc.exercise_id,
                         "sets": acc.sets,
                         "reps": acc.reps,
-                        "weight_type": "fixed"
+                        "weight_type": "fixed",
+                        "circuit_group": acc.circuit_group
                     }
                     for acc in accessories_data
                 ]
@@ -268,7 +270,8 @@ class ProgramService:
                         "exercise_id": acc.exercise_id,
                         "sets": acc.sets,
                         "reps": acc.reps,
-                        "weight_type": "fixed"
+                        "weight_type": "fixed",
+                        "circuit_group": acc.circuit_group
                     }
                     for acc in accessories_data
                 ]
@@ -372,7 +375,7 @@ class ProgramService:
                         cycle_number=cycle_number,
                         week_number=week_num,
                         week_type=week_type,
-                        status="scheduled"
+                        status=WorkoutStatus.SCHEDULED
                     )
                     db.add(workout)
                     db.flush()  # Get workout.id for foreign key
@@ -487,7 +490,7 @@ class ProgramService:
                         cycle_number=cycle_number,
                         week_number=week_num,
                         week_type=workout_week_type,  # Representative week type
-                        status="scheduled"
+                        status=WorkoutStatus.SCHEDULED
                     )
                     db.add(workout)
                     db.flush()
@@ -868,10 +871,11 @@ class ProgramService:
             )
 
         # Delete all related data in proper order
-        # 1. Delete workout sets (references workouts)
+        # 1. Delete workout sets and workout main lifts (both reference workouts)
         workouts = db.query(Workout).filter(Workout.program_id == program_id).all()
         for workout in workouts:
             db.query(WorkoutSet).filter(WorkoutSet.workout_id == workout.id).delete()
+            db.query(WorkoutMainLift).filter(WorkoutMainLift.workout_id == workout.id).delete()
 
         # 2. Delete workouts (references program)
         db.query(Workout).filter(Workout.program_id == program_id).delete()

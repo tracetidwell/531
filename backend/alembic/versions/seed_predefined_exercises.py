@@ -30,7 +30,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Dips',
-            'category': 'push',
+            'category': 'PUSH',
             'description': 'Bodyweight or weighted dips for triceps, chest, and shoulders. Can be done with parallel bars or rings.',
             'is_predefined': True,
             'user_id': None,
@@ -39,7 +39,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Pushups',
-            'category': 'push',
+            'category': 'PUSH',
             'description': 'Standard pushups or variations (ring pushups, blast strap pushups, weighted vest). Great upper body pressing exercise.',
             'is_predefined': True,
             'user_id': None,
@@ -48,7 +48,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Dumbbell Bench Press',
-            'category': 'push',
+            'category': 'PUSH',
             'description': 'Dumbbell bench press for upper body pressing. Works each arm independently and great for regular barbell bench press.',
             'is_predefined': True,
             'user_id': None,
@@ -57,7 +57,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Dumbbell Military Press',
-            'category': 'push',
+            'category': 'PUSH',
             'description': 'Standing or seated dumbbell shoulder press. Works shoulders and can be used as a core exercise.',
             'is_predefined': True,
             'user_id': None,
@@ -66,7 +66,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Dumbbell Incline Press',
-            'category': 'push',
+            'category': 'PUSH',
             'description': 'Incline dumbbell press at any angle (30, 45, or 60 degrees). Use slight elbow tuck when pressing and lowering.',
             'is_predefined': True,
             'user_id': None,
@@ -75,7 +75,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Barbell Incline Press',
-            'category': 'push',
+            'category': 'PUSH',
             'description': 'Barbell incline press for bench press and military press assistance. Any angle works.',
             'is_predefined': True,
             'user_id': None,
@@ -86,7 +86,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Chin-ups',
-            'category': 'pull',
+            'category': 'PULL',
             'description': 'Chin-ups or pull-ups with various grips (wide, medium, close, overhand, underhand, neutral). One of the best upper back, lat, and biceps exercises.',
             'is_predefined': True,
             'user_id': None,
@@ -95,7 +95,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Kroc Rows',
-            'category': 'pull',
+            'category': 'PULL',
             'description': 'Dumbbell rows done with high reps (20-40) with the heaviest dumbbell you can handle. Builds upper back and lat strength.',
             'is_predefined': True,
             'user_id': None,
@@ -104,7 +104,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Dumbbell Rows',
-            'category': 'pull',
+            'category': 'PULL',
             'description': 'Standard dumbbell rows for upper back and lat development. Start with 1-2 warm-up sets of 10 reps, then go all-out on set of 20-40 reps.',
             'is_predefined': True,
             'user_id': None,
@@ -113,7 +113,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Barbell Rows',
-            'category': 'pull',
+            'category': 'PULL',
             'description': 'Barbell rows for upper back and lat strength. Great for bench press and deadlift. Ask yourself why you\'re doing them.',
             'is_predefined': True,
             'user_id': None,
@@ -122,7 +122,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Barbell Shrugs',
-            'category': 'pull',
+            'category': 'PULL',
             'description': 'Barbell shrugs for high reps with as heavy weight as possible. Builds traps. Do all-out set of 20-40 reps after warm-up sets.',
             'is_predefined': True,
             'user_id': None,
@@ -133,7 +133,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Lunges',
-            'category': 'legs',
+            'category': 'LEGS',
             'description': 'Walking lunges, backwards lunges, or static lunges (side lunges are lame). Great for building leg strength and mass. Use dumbbells, barbells, weight vest, or bodyweight.',
             'is_predefined': True,
             'user_id': None,
@@ -142,7 +142,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Step-ups',
-            'category': 'legs',
+            'category': 'LEGS',
             'description': 'Step-ups for legs. Use a box that puts your leg at about parallel to the ground. Single leg movements reveal coordination and strength problems.',
             'is_predefined': True,
             'user_id': None,
@@ -151,7 +151,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Leg Press',
-            'category': 'legs',
+            'category': 'LEGS',
             'description': 'Leg press machine for leg strength and building. Use full range of motion and never use knee wraps.',
             'is_predefined': True,
             'user_id': None,
@@ -160,7 +160,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Back Raise',
-            'category': 'legs',
+            'category': 'LEGS',
             'description': 'Back raises (back extensions) on glute-ham raise bench or 45-degree back raise. Push butt way back, arch back, and use full range of motion.',
             'is_predefined': True,
             'user_id': None,
@@ -169,7 +169,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Good Morning',
-            'category': 'legs',
+            'category': 'LEGS',
             'description': 'Good mornings with good people with good mornings is training for exercise with the biggest opportunity for comedy. Not too shabby if you suck at those.',
             'is_predefined': True,
             'user_id': None,
@@ -178,7 +178,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Glute-Ham Raise',
-            'category': 'legs',
+            'category': 'LEGS',
             'description': 'Glute-ham raises work the low back, glutes, and hamstrings. Start with back raise motion, then do full range reps adding weight if needed.',
             'is_predefined': True,
             'user_id': None,
@@ -189,7 +189,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Hanging Leg Raises',
-            'category': 'core',
+            'category': 'CORE',
             'description': 'Hanging leg raises with straight legs, bringing feet to the bar. Return to complete stop. Do 2-3 sets of 10-15 reps with bodyweight.',
             'is_predefined': True,
             'user_id': None,
@@ -198,7 +198,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Dumbbell Side Bends',
-            'category': 'core',
+            'category': 'CORE',
             'description': 'Dumbbell side bends for abs, low back, and obliques. Use strict form with heavy weight. Do sets of 15-20.',
             'is_predefined': True,
             'user_id': None,
@@ -207,7 +207,7 @@ def upgrade():
         {
             'id': str(uuid.uuid4()),
             'name': 'Ab Wheel',
-            'category': 'core',
+            'category': 'CORE',
             'description': 'Abdominal wheel rollouts on knees or feet. Do sets of 25-50 reps on knees. Don\'t sag or A-frame.',
             'is_predefined': True,
             'user_id': None,

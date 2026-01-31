@@ -10,10 +10,10 @@ from app.database import Base
 
 class ExerciseCategory(str, enum.Enum):
     """Exercise category."""
-    PUSH = "push"
-    PULL = "pull"
-    LEGS = "legs"
-    CORE = "core"
+    PUSH = "PUSH"
+    PULL = "PULL"
+    LEGS = "LEGS"
+    CORE = "CORE"
 
 
 class Exercise(Base):
@@ -24,7 +24,7 @@ class Exercise(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
 
     name = Column(String(255), nullable=False)
-    category = Column(SQLEnum(ExerciseCategory, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    category = Column(SQLEnum(ExerciseCategory, name='exercisecategory', create_type=False), nullable=False)
     is_predefined = Column(Boolean, default=False, nullable=False)
 
     # Null for predefined exercises, set for custom user exercises

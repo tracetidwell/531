@@ -11,26 +11,26 @@ from app.database import Base
 
 class ProgramStatus(str, enum.Enum):
     """Program status."""
-    ACTIVE = "active"
-    COMPLETED = "completed"
-    PAUSED = "paused"
+    ACTIVE = "ACTIVE"
+    COMPLETED = "COMPLETED"
+    PAUSED = "PAUSED"
 
 
 class LiftType(str, enum.Enum):
     """Main lift types."""
-    SQUAT = "squat"
-    DEADLIFT = "deadlift"
-    BENCH_PRESS = "bench_press"
-    PRESS = "press"
+    SQUAT = "SQUAT"
+    DEADLIFT = "DEADLIFT"
+    BENCH_PRESS = "BENCH_PRESS"
+    PRESS = "PRESS"
 
 
 class TrainingMaxReason(str, enum.Enum):
     """Reason for training max change."""
-    INITIAL = "initial"
-    CYCLE_COMPLETION = "cycle_completion"
-    DELOAD = "deload"
-    FAILED_REPS = "failed_reps"
-    MANUAL = "manual"
+    INITIAL = "INITIAL"
+    CYCLE_COMPLETION = "CYCLE_COMPLETION"
+    DELOAD = "DELOAD"
+    FAILED_REPS = "FAILED_REPS"
+    MANUAL = "MANUAL"
 
 
 class Program(Base):
@@ -50,7 +50,7 @@ class Program(Base):
 
     training_days = Column(JSON, nullable=False)  # ["monday", "tuesday", "thursday", "saturday"]
     include_deload = Column(Integer, default=1, nullable=False)  # 1 = include deload week, 0 = skip deload
-    status = Column(SQLEnum(ProgramStatus, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=ProgramStatus.ACTIVE, nullable=False)
+    status = Column(SQLEnum(ProgramStatus, name='programstatus', create_type=False), default=ProgramStatus.ACTIVE, nullable=False)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
@@ -66,11 +66,11 @@ class TrainingMax(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     program_id = Column(String(36), ForeignKey("programs.id"), nullable=False, index=True)
 
-    lift_type = Column(SQLEnum(LiftType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    lift_type = Column(SQLEnum(LiftType, name='lifttype', create_type=False), nullable=False)
     value = Column(Float, nullable=False)
     effective_date = Column(Date, nullable=False)
     cycle_number = Column(Integer, nullable=False)
-    reason = Column(SQLEnum(TrainingMaxReason, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    reason = Column(SQLEnum(TrainingMaxReason, name='trainingmaxreason', create_type=False), nullable=False)
     notes = Column(Text, nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -87,11 +87,11 @@ class TrainingMaxHistory(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     program_id = Column(String(36), ForeignKey("programs.id"), nullable=False, index=True)
 
-    lift_type = Column(SQLEnum(LiftType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    lift_type = Column(SQLEnum(LiftType, name='lifttype', create_type=False), nullable=False)
     old_value = Column(Float, nullable=True)  # Null for first entry
     new_value = Column(Float, nullable=False)
     change_date = Column(DateTime, default=datetime.utcnow, nullable=False)
-    reason = Column(SQLEnum(TrainingMaxReason, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    reason = Column(SQLEnum(TrainingMaxReason, name='trainingmaxreason', create_type=False), nullable=False)
     notes = Column(Text, nullable=True)
 
     def __repr__(self):
@@ -107,7 +107,7 @@ class ProgramTemplate(Base):
     program_id = Column(String(36), ForeignKey("programs.id"), nullable=False, index=True)
 
     day_number = Column(Integer, nullable=False)  # 1-4 for 4-day program
-    main_lift = Column(SQLEnum(LiftType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    main_lift = Column(SQLEnum(LiftType, name='lifttype', create_type=False), nullable=False)
     accessories = Column(JSON, nullable=False)  # [{"exercise_id": "uuid", "sets": 5, "reps": 12}, ...]
 
     def __repr__(self):

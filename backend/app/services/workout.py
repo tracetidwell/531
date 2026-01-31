@@ -126,6 +126,7 @@ class WorkoutService:
 
         # Build sets for each main lift
         sets_by_lift = {}
+        accessory_sets = []
 
         # For completed workouts, fetch actual logged sets from database
         if workout.status == WorkoutStatus.COMPLETED:
@@ -134,50 +135,61 @@ class WorkoutService:
                 WorkoutSet.workout_id == workout_id
             ).order_by(WorkoutSet.set_number).all()
 
-            # Group sets by lift type
+            # Group sets by lift type (for warmup/main) and collect accessories separately
             sets_by_lift_type = {}
             for workout_set in workout_sets:
-                # Get lift type directly from the workout set
-                lift_type = workout_set.lift_type
+                # Convert to response format
+                set_response = WorkoutSetResponse(
+                    set_type=workout_set.set_type.value,
+                    set_number=workout_set.set_number,
+                    prescribed_reps=workout_set.prescribed_reps,
+                    prescribed_weight=workout_set.prescribed_weight,
+                    percentage_of_tm=workout_set.percentage_of_tm,
+                    actual_reps=workout_set.actual_reps,
+                    actual_weight=workout_set.actual_weight,
+                    is_target_met=workout_set.is_target_met,
+                    exercise_id=workout_set.exercise_id if workout_set.set_type == SetType.ACCESSORY else None,
+                    circuit_group=None  # circuit_group not stored in DB, only used for prescribed sets
+                )
 
-                if lift_type:
-                    lift_type_str = lift_type.value
-                    if lift_type_str not in sets_by_lift_type:
-                        sets_by_lift_type[lift_type_str] = {
-                            'warmup': [],
-                            'main': [],
-                            'accessory': []
-                        }
+                # Accessory sets go to workout level (will deduplicate later)
+                if workout_set.set_type == SetType.ACCESSORY:
+                    accessory_sets.append((workout_set.exercise_id, workout_set.set_number, set_response))
+                else:
+                    # Warmup and main sets go under their lift type
+                    lift_type = workout_set.lift_type
+                    if lift_type:
+                        lift_type_str = lift_type.value
+                        if lift_type_str not in sets_by_lift_type:
+                            sets_by_lift_type[lift_type_str] = {
+                                'warmup': [],
+                                'main': []
+                            }
 
-                    # Convert to response format
-                    set_response = WorkoutSetResponse(
-                        set_type=workout_set.set_type.value,
-                        set_number=workout_set.set_number,
-                        prescribed_reps=workout_set.prescribed_reps,
-                        prescribed_weight=workout_set.prescribed_weight,
-                        percentage_of_tm=workout_set.percentage_of_tm,
-                        actual_reps=workout_set.actual_reps,
-                        actual_weight=workout_set.actual_weight,
-                        is_target_met=workout_set.is_target_met,
-                        exercise_id=workout_set.exercise_id if workout_set.set_type == SetType.ACCESSORY else None
-                    )
+                        if workout_set.set_type == SetType.WARMUP:
+                            sets_by_lift_type[lift_type_str]['warmup'].append(set_response)
+                        elif workout_set.set_type in [SetType.WORKING, SetType.AMRAP]:
+                            sets_by_lift_type[lift_type_str]['main'].append(set_response)
 
-                    if workout_set.set_type == SetType.WARMUP:
-                        sets_by_lift_type[lift_type_str]['warmup'].append(set_response)
-                    elif workout_set.set_type in [SetType.WORKING, SetType.AMRAP]:
-                        sets_by_lift_type[lift_type_str]['main'].append(set_response)
-                    elif workout_set.set_type == SetType.ACCESSORY:
-                        sets_by_lift_type[lift_type_str]['accessory'].append(set_response)
+            # Deduplicate accessory sets by (exercise_id, set_number)
+            # This handles historical data where accessories were duplicated per main lift
+            seen_accessory_keys = set()
+            deduplicated_accessories = []
+            for exercise_id, set_number, set_response in accessory_sets:
+                key = (exercise_id, set_number)
+                if key not in seen_accessory_keys:
+                    seen_accessory_keys.add(key)
+                    deduplicated_accessories.append(set_response)
+            accessory_sets = deduplicated_accessories
 
-            # Build final structure
+            # Build final structure for main lifts
             for main_lift in workout.main_lifts:
                 lift_type_str = main_lift.lift_type.value
-                lift_sets = sets_by_lift_type.get(lift_type_str, {'warmup': [], 'main': [], 'accessory': []})
+                lift_sets = sets_by_lift_type.get(lift_type_str, {'warmup': [], 'main': []})
 
                 sets_by_lift[lift_type_str] = WorkoutSetsForLift(
                     warmup_sets=lift_sets['warmup'],
-                    main_sets=lift_sets['main'],
-                    accessory_sets=lift_sets['accessory']
+                    main_sets=lift_sets['main']
                 )
         else:
             # For scheduled workouts, calculate prescribed sets
@@ -197,16 +209,17 @@ class WorkoutService:
                     user.rounding_increment
                 )
 
+                sets_by_lift[main_lift.lift_type.value] = WorkoutSetsForLift(
+                    warmup_sets=warmup_sets,
+                    main_sets=main_sets
+                )
+
+            # Get accessory sets once at workout level (from first main lift's template)
+            if workout.main_lifts:
                 accessory_sets = WorkoutService._get_accessory_sets(
                     db,
                     workout.program_id,
-                    main_lift.lift_type
-                )
-
-                sets_by_lift[main_lift.lift_type.value] = WorkoutSetsForLift(
-                    warmup_sets=warmup_sets,
-                    main_sets=main_sets,
-                    accessory_sets=accessory_sets
+                    workout.main_lifts[0].lift_type
                 )
 
         return WorkoutDetailResponse(
@@ -222,6 +235,7 @@ class WorkoutService:
             ],
             status=workout.status.value,
             sets_by_lift=sets_by_lift,
+            accessory_sets=accessory_sets,
             notes=workout.notes,
             created_at=workout.created_at
         )
@@ -489,17 +503,22 @@ class WorkoutService:
             if prescribed_values["prescribed_reps"] is not None:
                 is_target_met = set_log.actual_reps >= prescribed_values["prescribed_reps"]
 
+            # exercise_id should be NULL for main lifts (frontend sends "main_lift" placeholder)
+            exercise_id = set_log.exercise_id
+            if exercise_id == "main_lift" or exercise_id == "main lift":
+                exercise_id = None
+
             workout_set = WorkoutSet(
                 workout_id=workout.id,
-                exercise_id=set_log.exercise_id,
-                set_type=SetType(set_log.set_type),
+                exercise_id=exercise_id,
+                set_type=SetType(set_log.set_type.upper()),
                 set_number=set_log.set_number,
                 lift_type=lift_type,  # Save which lift this set belongs to
                 prescribed_reps=prescribed_values["prescribed_reps"],
                 actual_reps=set_log.actual_reps,
                 prescribed_weight=prescribed_values["prescribed_weight"],
                 actual_weight=set_log.actual_weight,
-                weight_unit=WeightUnit(set_log.weight_unit),
+                weight_unit=WeightUnit(set_log.weight_unit.upper()),
                 percentage_of_tm=prescribed_values["percentage_of_tm"],
                 is_target_met=is_target_met,
                 notes=set_log.notes
@@ -508,11 +527,13 @@ class WorkoutService:
             db.add(workout_set)
 
             # Track the AMRAP set (last working set on non-deload weeks) per lift
+            print(f"DEBUG PR: set_type={set_log.set_type}, set_number={set_log.set_number}, week_type={workout.week_type}, lift={lift_type}")
             if (set_log.set_type in ["working", "amrap"] and
                 set_log.set_number == 3 and
                 workout.week_type != WeekType.WEEK_4_DELOAD):
                 db.flush()  # Get the workout_set ID
                 amrap_workout_set_ids_by_lift[lift_type] = workout_set.id
+                print(f"DEBUG PR: Tracked AMRAP for {lift_type}: workout_set_id={workout_set.id}")
 
         # Detect AMRAP and update rep maxes for each lift
         for lift_type, amrap_workout_set_id in amrap_workout_set_ids_by_lift.items():
@@ -562,11 +583,17 @@ class WorkoutService:
             WorkoutSet.id == amrap_workout_set_id
         ).first()
 
+        print(f"DEBUG PR: _detect_amrap called for {lift_type}, amrap_set={amrap_set}")
+
         if not amrap_set:
+            print(f"DEBUG PR: No amrap_set found for id={amrap_workout_set_id}")
             return
+
+        print(f"DEBUG PR: amrap_set weight={amrap_set.actual_weight}, reps={amrap_set.actual_reps}")
 
         # Calculate 1RM from AMRAP performance
         calculated_1rm = calculate_1rm(amrap_set.actual_weight, amrap_set.actual_reps)
+        print(f"DEBUG PR: Calculated 1RM={calculated_1rm}")
 
         # Only update if this is a new PR for this rep range
         existing_rep_max = db.query(RepMax).filter(
@@ -575,11 +602,15 @@ class WorkoutService:
             RepMax.reps == amrap_set.actual_reps
         ).order_by(RepMax.achieved_date.desc()).first()
 
+        print(f"DEBUG PR: existing_rep_max={existing_rep_max}")
+
         # Update if no existing record or if this is heavier
         should_update = (
             not existing_rep_max or
             amrap_set.actual_weight > existing_rep_max.weight
         )
+
+        print(f"DEBUG PR: should_update={should_update}")
 
         if should_update:
             # Get workout to access completed_date

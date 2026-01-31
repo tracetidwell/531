@@ -34,15 +34,15 @@ async def get_all_rep_maxes(
     Example response:
     ```json
     {
-      "squat": {
-        "1": {"weight": 315, "calculated_1rm": 315, "achieved_date": "2024-12-15", "weight_unit": "lbs"},
-        "2": {"weight": 305, "calculated_1rm": 325, "achieved_date": "2024-12-01", "weight_unit": "lbs"},
-        "5": {"weight": 275, "calculated_1rm": 321, "achieved_date": "2024-11-15", "weight_unit": "lbs"},
-        "8": {"weight": 245, "calculated_1rm": 310, "achieved_date": "2024-10-30", "weight_unit": "lbs"}
-      },
-      "deadlift": {...},
-      "bench_press": {...},
-      "press": {...}
+      "lifts": {
+        "SQUAT": {
+          "1": {"weight": 315, "calculated_1rm": 315, "achieved_date": "2024-12-15", "weight_unit": "lbs"},
+          "5": {"weight": 275, "calculated_1rm": 321, "achieved_date": "2024-11-15", "weight_unit": "lbs"}
+        },
+        "DEADLIFT": {...},
+        "BENCH_PRESS": {...},
+        "PRESS": null
+      }
     }
     ```
 

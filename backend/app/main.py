@@ -17,12 +17,11 @@ app = FastAPI(
 )
 
 # Configure CORS
-# Note: In development, we allow all localhost origins
-# In production, this should be restricted to your actual frontend domain
+# Allow localhost for development and any origin for mobile apps
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1)(:\d+)?",
-    allow_credentials=True,
+    allow_origins=["*"],  # Allow all origins (mobile apps don't use CORS, web dev needs flexibility)
+    allow_credentials=False,  # Must be False when using allow_origins=["*"]
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
     expose_headers=["*"],

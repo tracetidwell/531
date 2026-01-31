@@ -1,0 +1,60 @@
+{
+    "Service": {
+        "ServiceName": "531-backend",
+        "ServiceId": "21aaccb90bd940c0bab7c5d82d6e8129",
+        "ServiceArn": "arn:aws:apprunner:us-east-1:454262414767:service/531-backend/21aaccb90bd940c0bab7c5d82d6e8129",
+        "ServiceUrl": "buzqcavpat.us-east-1.awsapprunner.com",
+        "CreatedAt": "2026-01-24T18:47:14-05:00",
+        "UpdatedAt": "2026-01-24T18:47:14-05:00",
+        "Status": "RUNNING",
+        "SourceConfiguration": {
+            "ImageRepository": {
+                "ImageIdentifier": "454262414767.dkr.ecr.us-east-1.amazonaws.com/531-backend:latest",
+                "ImageConfiguration": {
+                    "Port": "8000",
+                    "RuntimeEnvironmentSecrets": {
+                        "DATABASE_URL": "arn:aws:secretsmanager:us-east-1:454262414767:secret:531-app/production:DATABASE_URL::",
+                        "JWT_SECRET_KEY": "arn:aws:secretsmanager:us-east-1:454262414767:secret:531-app/production:JWT_SECRET_KEY::",
+                        "SMTP_HOST": "arn:aws:secretsmanager:us-east-1:454262414767:secret:531-app/production:SMTP_HOST::",
+                        "SMTP_PASSWORD": "arn:aws:secretsmanager:us-east-1:454262414767:secret:531-app/production:SMTP_PASSWORD::",
+                        "SMTP_PORT": "arn:aws:secretsmanager:us-east-1:454262414767:secret:531-app/production:SMTP_PORT::",
+                        "SMTP_USER": "arn:aws:secretsmanager:us-east-1:454262414767:secret:531-app/production:SMTP_USER::"
+                    }
+                },
+                "ImageRepositoryType": "ECR"
+            },
+            "AutoDeploymentsEnabled": false,
+            "AuthenticationConfiguration": {
+                "AccessRoleArn": "arn:aws:iam::454262414767:role/AppRunnerECRAccessRole"
+            }
+        },
+        "InstanceConfiguration": {
+            "Cpu": "256",
+            "Memory": "512",
+            "InstanceRoleArn": "arn:aws:iam::454262414767:role/AppRunnerInstanceRole"
+        },
+        "HealthCheckConfiguration": {
+            "Protocol": "TCP",
+            "Path": "/",
+            "Interval": 5,
+            "Timeout": 2,
+            "HealthyThreshold": 1,
+            "UnhealthyThreshold": 5
+        },
+        "AutoScalingConfigurationSummary": {
+            "AutoScalingConfigurationArn": "arn:aws:apprunner:us-east-1:454262414767:autoscalingconfiguration/DefaultConfiguration/1/00000000000000000000000000000001",
+            "AutoScalingConfigurationName": "DefaultConfiguration",
+            "AutoScalingConfigurationRevision": 1
+        },
+        "NetworkConfiguration": {
+            "EgressConfiguration": {
+                "EgressType": "VPC",
+                "VpcConnectorArn": "arn:aws:apprunner:us-east-1:454262414767:vpcconnector/531-vpc-connector/1/d81efca593a9463d8d835cb16225cc5d"
+            },
+            "IngressConfiguration": {
+                "IsPubliclyAccessible": true
+            },
+            "IpAddressType": "IPV4"
+        }
+    }
+}

@@ -109,4 +109,4 @@ class RepMaxService:
             else:
                 result[lift.value] = None
 
-        return AllRepMaxesResponse(**result)
+        return AllRepMaxesResponse(lifts=result)
