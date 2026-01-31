@@ -16,7 +16,7 @@ class WarmupTemplate(Base):
     user_id = Column(String(36), ForeignKey("users.id"), nullable=False, index=True)
 
     name = Column(String(255), nullable=False)
-    lift_type = Column(SQLEnum(LiftType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    lift_type = Column(SQLEnum(LiftType, name='lifttype', create_type=False), nullable=False)
     is_default = Column(Boolean, default=False, nullable=False)
 
     # JSON array: [{"weight_type": "bar|fixed|percentage", "value": float|null, "reps": int}, ...]

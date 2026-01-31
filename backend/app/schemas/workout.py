@@ -59,7 +59,6 @@ class WorkoutSetsForLift(BaseModel):
     """Sets organized by type for a specific lift."""
     warmup_sets: List[WorkoutSetResponse]
     main_sets: List[WorkoutSetResponse]
-    accessory_sets: List[WorkoutSetResponse]
 
 
 class WorkoutDetailResponse(BaseModel):
@@ -75,8 +74,11 @@ class WorkoutDetailResponse(BaseModel):
     status: str
 
     # Prescribed sets organized by lift type
-    # Structure: {"squat": {"warmup_sets": [...], "main_sets": [...], "accessory_sets": [...]}, ...}
+    # Structure: {"squat": {"warmup_sets": [...], "main_sets": [...]}, ...}
     sets_by_lift: Dict[str, WorkoutSetsForLift]
+
+    # Accessory sets at workout level (not per-lift)
+    accessory_sets: List[WorkoutSetResponse]
 
     # Additional info
     notes: Optional[str]

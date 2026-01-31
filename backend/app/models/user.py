@@ -11,15 +11,15 @@ import enum
 
 class WeightUnit(str, enum.Enum):
     """Weight unit preference."""
-    LBS = "lbs"
-    KG = "kg"
+    LBS = "LBS"
+    KG = "KG"
 
 
 class MissedWorkoutPreference(str, enum.Enum):
     """How to handle missed workouts."""
-    SKIP = "skip"
-    RESCHEDULE = "reschedule"
-    ASK = "ask"
+    SKIP = "SKIP"
+    RESCHEDULE = "RESCHEDULE"
+    ASK = "ASK"
 
 
 class User(Base):
@@ -35,13 +35,13 @@ class User(Base):
 
     # Preferences
     weight_unit_preference = Column(
-        SQLEnum(WeightUnit),
+        SQLEnum(WeightUnit, name='weightunit', create_type=False),
         default=WeightUnit.LBS,
         nullable=False
     )
     rounding_increment = Column(Float, default=5.0, nullable=False)
     missed_workout_preference = Column(
-        SQLEnum(MissedWorkoutPreference),
+        SQLEnum(MissedWorkoutPreference, name='missedworkoutpreference', create_type=False),
         default=MissedWorkoutPreference.ASK,
         nullable=False
     )

@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Database
-    DATABASE_URL: str = "sqlite:///./data/531.db"
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/five_three_one"
 
     # JWT Authentication
     JWT_SECRET_KEY: str
@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"
 
 
 # Global settings instance

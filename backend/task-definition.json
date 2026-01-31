@@ -1,0 +1,28 @@
+{
+  "family": "531-backend",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::454262414767:role/ecsTaskExecutionRole",
+  "containerDefinitions": [{
+    "name": "backend",
+    "image": "454262414767.dkr.ecr.us-east-1.amazonaws.com/531-backend:latest",
+    "portMappings": [{"containerPort": 8000, "protocol": "tcp"}],
+    "environment": [
+      {"name": "CORS_ORIGINS", "value": "[\"*\"]"}
+    ],
+    "secrets": [
+      {"name": "DATABASE_URL", "valueFrom": "arn:aws:secretsmanager:us-east-1:<ACCOUNT_ID>:secret:531-app/production:DATABASE_URL::"},
+      {"name": "JWT_SECRET_KEY", "valueFrom": "arn:aws:secretsmanager:us-east-1:<ACCOUNT_ID>:secret:531-app/production:JWT_SECRET_KEY::"}
+    ],
+    "logConfiguration": {
+      "logDriver": "awslogs",
+      "options": {
+        "awslogs-group": "/ecs/531-backend",
+        "awslogs-region": "us-east-1",
+        "awslogs-stream-prefix": "ecs"
+      }
+    }
+  }]
+}

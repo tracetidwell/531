@@ -29,9 +29,9 @@ class RepMaxByRepsResponse(BaseModel):
 
 class AllRepMaxesResponse(BaseModel):
     """All rep maxes for all lifts."""
-    squat: Optional[Dict[int, RepMaxRecord]] = Field(None, description="Squat rep maxes")
-    deadlift: Optional[Dict[int, RepMaxRecord]] = Field(None, description="Deadlift rep maxes")
-    bench_press: Optional[Dict[int, RepMaxRecord]] = Field(None, description="Bench press rep maxes")
-    press: Optional[Dict[int, RepMaxRecord]] = Field(None, description="Press rep maxes")
+    lifts: Dict[str, Optional[Dict[int, RepMaxRecord]]] = Field(
+        ...,
+        description="Rep maxes keyed by lift type (SQUAT, DEADLIFT, BENCH_PRESS, PRESS)"
+    )
 
     model_config = ConfigDict(from_attributes=True)

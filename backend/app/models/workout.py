@@ -12,32 +12,32 @@ from app.models.program import LiftType
 
 class WorkoutStatus(str, enum.Enum):
     """Workout status."""
-    SCHEDULED = "scheduled"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    SKIPPED = "skipped"
+    SCHEDULED = "SCHEDULED"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    SKIPPED = "SKIPPED"
 
 
 class WeekType(str, enum.Enum):
     """5/3/1 week type."""
-    WEEK_1_5S = "week_1_5s"
-    WEEK_2_3S = "week_2_3s"
-    WEEK_3_531 = "week_3_531"
-    WEEK_4_DELOAD = "week_4_deload"
+    WEEK_1_5S = "WEEK_1_5S"
+    WEEK_2_3S = "WEEK_2_3S"
+    WEEK_3_531 = "WEEK_3_531"
+    WEEK_4_DELOAD = "WEEK_4_DELOAD"
 
 
 class SetType(str, enum.Enum):
     """Type of set."""
-    WARMUP = "warmup"
-    WORKING = "working"
-    ACCESSORY = "accessory"
-    AMRAP = "amrap"
+    WARMUP = "WARMUP"
+    WORKING = "WORKING"
+    ACCESSORY = "ACCESSORY"
+    AMRAP = "AMRAP"
 
 
 class WeightUnit(str, enum.Enum):
     """Weight unit for a set."""
-    LBS = "lbs"
-    KG = "kg"
+    LBS = "LBS"
+    KG = "KG"
 
 
 class WorkoutMainLift(Base):
@@ -47,12 +47,12 @@ class WorkoutMainLift(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     workout_id = Column(String(36), ForeignKey("workouts.id"), nullable=False, index=True)
-    lift_type = Column(SQLEnum(LiftType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    lift_type = Column(SQLEnum(LiftType, name='lifttype', create_type=False), nullable=False)
     lift_order = Column(Integer, nullable=False, default=1)
     current_training_max = Column(Float, nullable=False)
     # Week type for this specific lift (used in 3-day programs where each lift progresses independently)
     # For 4-day/2-day programs, this will match the workout's week_type
-    week_type = Column(SQLEnum(WeekType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=True)
+    week_type = Column(SQLEnum(WeekType, name='weektype', create_type=False), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     def __repr__(self):
@@ -72,9 +72,9 @@ class Workout(Base):
 
     cycle_number = Column(Integer, nullable=False)
     week_number = Column(Integer, nullable=False)  # 1-4
-    week_type = Column(SQLEnum(WeekType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    week_type = Column(SQLEnum(WeekType, name='weektype', create_type=False), nullable=False)
 
-    status = Column(SQLEnum(WorkoutStatus, native_enum=False, values_callable=lambda x: [e.value for e in x]), default=WorkoutStatus.SCHEDULED, nullable=False)
+    status = Column(SQLEnum(WorkoutStatus, name='workoutstatus', create_type=False), default=WorkoutStatus.SCHEDULED, nullable=False)
 
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -93,11 +93,11 @@ class WorkoutSet(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     workout_id = Column(String(36), ForeignKey("workouts.id"), nullable=False, index=True)
-    exercise_id = Column(String(36), ForeignKey("exercises.id"), nullable=False)
+    exercise_id = Column(String(36), ForeignKey("exercises.id"), nullable=True)  # NULL for main lifts
 
-    set_type = Column(SQLEnum(SetType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    set_type = Column(SQLEnum(SetType, name='settype', create_type=False), nullable=False)
     set_number = Column(Integer, nullable=False)
-    lift_type = Column(SQLEnum(LiftType, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=True)  # Which main lift this set belongs to
+    lift_type = Column(SQLEnum(LiftType, name='lifttype', create_type=False), nullable=True)  # Which main lift this set belongs to
 
     prescribed_reps = Column(Integer, nullable=True)
     actual_reps = Column(Integer, nullable=False)
@@ -105,7 +105,7 @@ class WorkoutSet(Base):
     prescribed_weight = Column(Float, nullable=True)
     actual_weight = Column(Float, nullable=False)
 
-    weight_unit = Column(SQLEnum(WeightUnit, native_enum=False, values_callable=lambda x: [e.value for e in x]), nullable=False)
+    weight_unit = Column(SQLEnum(WeightUnit, name='weightunit', create_type=False), nullable=False)
     percentage_of_tm = Column(Float, nullable=True)  # For main lifts
     is_target_met = Column(Boolean, nullable=False)  # True if actual_reps >= prescribed_reps
 

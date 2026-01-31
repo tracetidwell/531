@@ -51,14 +51,68 @@ if [ ! -d "/home/trace/Documents/531/frontend" ]; then
     exit 1
 fi
 
+# Register cleanup function to run on script exit
+cleanup() {
+    echo ""
+    echo "========================================="
+    echo "Shutting down..."
+    echo "========================================="
+
+    if [ ! -z "$BACKEND_PID" ]; then
+        echo "Stopping backend (PID: $BACKEND_PID)..."
+        kill $BACKEND_PID 2>/dev/null || true
+    fi
+
+    if [ "$PLATFORM" == "mobile" ]; then
+        echo "Stopping emulator..."
+        adb emu kill 2>/dev/null || true
+    fi
+
+    echo "Stopping PostgreSQL..."
+    cd /home/trace/Documents/531/backend
+    docker-compose down > /dev/null 2>&1 || true
+
+    echo "Cleanup complete!"
+}
+trap cleanup EXIT
+
+# Start PostgreSQL database
+echo ""
+if [ "$PLATFORM" == "web" ]; then
+    echo "[1/3] Starting PostgreSQL database..."
+else
+    echo "[1/5] Starting PostgreSQL database..."
+fi
+cd /home/trace/Documents/531/backend
+
+docker-compose up -d db > /tmp/531-db.log 2>&1
+echo "Waiting for PostgreSQL to be ready..."
+timeout=60
+elapsed=0
+while [ $elapsed -lt $timeout ]; do
+    if docker-compose exec -T db pg_isready -U postgres > /dev/null 2>&1; then
+        echo "PostgreSQL is ready! ✓"
+        break
+    fi
+    sleep 2
+    elapsed=$((elapsed + 2))
+done
+if [ $elapsed -ge $timeout ]; then
+    echo "Error: PostgreSQL failed to start. Check /tmp/531-db.log"
+    exit 1
+fi
+
+# Run database migrations
+echo "Running database migrations..."
+venv/bin/python -m alembic upgrade head
+
 # Start backend
 echo ""
 if [ "$PLATFORM" == "web" ]; then
-    echo "[1/2] Starting FastAPI backend..."
+    echo "[2/3] Starting FastAPI backend..."
 else
-    echo "[1/4] Starting FastAPI backend..."
+    echo "[2/5] Starting FastAPI backend..."
 fi
-cd /home/trace/Documents/531/backend
 
 # Use virtual environment Python to run uvicorn
 venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload > /tmp/531-backend.log 2>&1 &
@@ -67,9 +121,9 @@ echo "Backend started (PID: $BACKEND_PID)"
 
 # Wait for backend to start
 if [ "$PLATFORM" == "web" ]; then
-    echo "[2/2] Waiting for backend to initialize..."
+    echo "[3/3] Waiting for backend to initialize..."
 else
-    echo "[2/4] Waiting for backend to initialize..."
+    echo "[3/5] Waiting for backend to initialize..."
 fi
 sleep 5
 
@@ -83,7 +137,7 @@ fi
 # Start emulator only if mobile platform selected
 if [ "$PLATFORM" == "mobile" ]; then
     echo ""
-    echo "[3/4] Starting Android emulator..."
+    echo "[4/5] Starting Android emulator..."
     flutter emulators --launch Medium_Phone_API_36.1 > /tmp/531-emulator.log 2>&1 &
     EMULATOR_PID=$!
 
@@ -110,11 +164,11 @@ if [ "$PLATFORM" == "mobile" ]; then
     # Give emulator a bit more time to fully boot
     sleep 5
 
-    STEP_NUM="[4/4]"
+    STEP_NUM="[5/5]"
 else
     # Web platform - skip emulator
     echo ""
-    STEP_NUM="[2/2]"
+    STEP_NUM="[3/3]"
 fi
 
 # Run Flutter app
@@ -132,6 +186,7 @@ echo "  r - Hot reload"
 echo "  R - Hot restart"
 echo "  q - Quit app"
 echo ""
+echo "Database logs: /tmp/531-db.log"
 echo "Backend logs: /tmp/531-backend.log"
 if [ "$PLATFORM" == "mobile" ]; then
     echo "Emulator logs: /tmp/531-emulator.log"
@@ -151,25 +206,3 @@ else
     flutter run
 fi
 
-# Cleanup function
-cleanup() {
-    echo ""
-    echo "========================================="
-    echo "Shutting down..."
-    echo "========================================="
-
-    if [ ! -z "$BACKEND_PID" ]; then
-        echo "Stopping backend (PID: $BACKEND_PID)..."
-        kill $BACKEND_PID 2>/dev/null || true
-    fi
-
-    if [ "$PLATFORM" == "mobile" ]; then
-        echo "Stopping emulator..."
-        adb emu kill 2>/dev/null || true
-    fi
-
-    echo "Cleanup complete!"
-}
-
-# Register cleanup function to run on script exit
-trap cleanup EXIT
