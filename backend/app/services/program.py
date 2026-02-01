@@ -13,7 +13,7 @@ from app.models.workout import Workout, WorkoutMainLift, WeekType, WorkoutStatus
 from app.models.user import User
 from app.schemas.program import (
     ProgramCreateRequest, ProgramResponse, ProgramDetailResponse,
-    ProgramUpdateRequest, TrainingMaxResponse
+    ProgramUpdateRequest, TrainingMaxResponse, AccessoriesUpdateRequest
 )
 
 
@@ -616,6 +616,52 @@ class ProgramService:
         )
 
     @staticmethod
+    def get_program_templates(
+        db: Session,
+        user: User,
+        program_id: str
+    ) -> List[dict]:
+        """
+        Get all templates (training days with accessories) for a program.
+
+        Args:
+            db: Database session
+            user: Current user
+            program_id: Program ID
+
+        Returns:
+            List of template dictionaries with day_number, main_lift, and accessories
+
+        Raises:
+            HTTPException: If program not found
+        """
+        # Verify program ownership
+        program = db.query(Program).filter(
+            Program.id == program_id,
+            Program.user_id == user.id
+        ).first()
+
+        if not program:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Program not found"
+            )
+
+        # Get all templates for this program
+        templates = db.query(ProgramTemplate).filter(
+            ProgramTemplate.program_id == program_id
+        ).order_by(ProgramTemplate.day_number).all()
+
+        return [
+            {
+                "day_number": t.day_number,
+                "main_lift": t.main_lift.value,
+                "accessories": t.accessories or []
+            }
+            for t in templates
+        ]
+
+    @staticmethod
     def update_program(
         db: Session,
         user: User,
@@ -657,6 +703,79 @@ class ProgramService:
         db.refresh(program)
 
         return ProgramResponse.model_validate(program)
+
+    @staticmethod
+    def update_accessories(
+        db: Session,
+        user: User,
+        program_id: str,
+        day_number: int,
+        update_data: AccessoriesUpdateRequest
+    ) -> dict:
+        """
+        Update accessory exercises for a specific training day.
+
+        Args:
+            db: Database session
+            user: Current user
+            program_id: Program ID
+            day_number: Training day number (1-4)
+            update_data: New accessories configuration
+
+        Returns:
+            Success message with updated accessories
+
+        Raises:
+            HTTPException: If program or template not found
+        """
+        # Verify program ownership
+        program = db.query(Program).filter(
+            Program.id == program_id,
+            Program.user_id == user.id
+        ).first()
+
+        if not program:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Program not found"
+            )
+
+        # Find ALL templates for this day (2-day programs have multiple lifts per day)
+        templates = db.query(ProgramTemplate).filter(
+            ProgramTemplate.program_id == program_id,
+            ProgramTemplate.day_number == day_number
+        ).all()
+
+        if not templates:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No template found for day {day_number}"
+            )
+
+        # Convert accessories to JSON format
+        accessories_json = [
+            {
+                "exercise_id": acc.exercise_id,
+                "sets": acc.sets,
+                "reps": acc.reps,
+                "circuit_group": acc.circuit_group
+            }
+            for acc in update_data.accessories
+        ]
+
+        # Update ALL templates for this day (keeps accessories in sync for multi-lift days)
+        lifts_updated = []
+        for template in templates:
+            template.accessories = accessories_json
+            lifts_updated.append(template.main_lift.value)
+        db.commit()
+
+        return {
+            "message": f"Updated accessories for day {day_number}",
+            "day_number": day_number,
+            "lifts_updated": lifts_updated,
+            "accessories": accessories_json
+        }
 
     @staticmethod
     def complete_cycle(

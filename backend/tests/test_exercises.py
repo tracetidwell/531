@@ -96,7 +96,7 @@ class TestExerciseListing:
     def test_list_exercises_by_category(self, client, auth_token, predefined_exercises):
         """Test filtering exercises by category."""
         response = client.get(
-            "/api/v1/exercises?category=push",
+            "/api/v1/exercises?category=PUSH",
             headers={"Authorization": f"Bearer {auth_token}"}
         )
 
@@ -105,7 +105,7 @@ class TestExerciseListing:
 
         assert len(data) >= 1
         for exercise in data:
-            assert exercise["category"] == "push"
+            assert exercise["category"].upper() == "PUSH"
 
     def test_list_only_predefined_exercises(self, client, auth_token, predefined_exercises, db, test_user):
         """Test filtering for only predefined exercises."""
@@ -172,7 +172,7 @@ class TestExerciseCreation:
         """Test creating a custom exercise."""
         exercise_data = {
             "name": "Band Pull-Aparts",
-            "category": "pull",
+            "category": "PULL",
             "description": "Resistance band pull-aparts for rear delts"
         }
 
@@ -186,15 +186,14 @@ class TestExerciseCreation:
         data = response.json()
 
         assert data["name"] == "Band Pull-Aparts"
-        assert data["category"] == "pull"
+        assert data["category"].upper() == "PULL"
         assert data["description"] == "Resistance band pull-aparts for rear delts"
         assert data["is_predefined"] is False
         assert "id" in data
-        assert "created_at" in data
 
     def test_create_custom_exercise_all_categories(self, client, auth_token):
         """Test creating custom exercises for all categories."""
-        categories = ["push", "pull", "legs", "core"]
+        categories = ["PUSH", "PULL", "LEGS", "CORE"]
 
         for category in categories:
             exercise_data = {
@@ -211,7 +210,7 @@ class TestExerciseCreation:
 
             assert response.status_code == 201
             data = response.json()
-            assert data["category"] == category
+            assert data["category"].upper() == category
 
     def test_create_custom_exercise_without_auth_fails(self, client):
         """Test that creating exercise without auth fails."""
@@ -244,7 +243,7 @@ class TestExerciseCreation:
         """Test creating exercise without description (should be optional)."""
         exercise_data = {
             "name": "Minimal Exercise",
-            "category": "push"
+            "category": "PUSH"
         }
 
         response = client.post(

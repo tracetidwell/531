@@ -9,7 +9,8 @@ from app.schemas.program import (
     ProgramCreateRequest,
     ProgramResponse,
     ProgramDetailResponse,
-    ProgramUpdateRequest
+    ProgramUpdateRequest,
+    AccessoriesUpdateRequest
 )
 from app.services.program import ProgramService
 from app.models.user import User
@@ -92,6 +93,29 @@ async def get_program(
     return ProgramService.get_program_detail(db, current_user, program_id)
 
 
+@router.get(
+    "/{program_id}/templates",
+    response_model=List[dict],
+    status_code=status.HTTP_200_OK,
+    summary="Get program templates",
+    description="Get all training day templates with accessories for a program."
+)
+async def get_program_templates(
+    program_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> List[dict]:
+    """
+    Get all templates (training days with accessories) for a program.
+
+    Returns list of templates with:
+    - day_number: Training day (1-4)
+    - main_lift: Primary lift for that day
+    - accessories: List of accessory exercises
+    """
+    return ProgramService.get_program_templates(db, current_user, program_id)
+
+
 @router.put(
     "/{program_id}",
     response_model=ProgramResponse,
@@ -114,6 +138,31 @@ async def update_program(
     - end_date: Set or update end date
     """
     return ProgramService.update_program(db, current_user, program_id, update_data)
+
+
+@router.put(
+    "/{program_id}/days/{day_number}/accessories",
+    response_model=dict,
+    status_code=status.HTTP_200_OK,
+    summary="Update accessories for a training day",
+    description="Update the accessory exercises for a specific training day. Changes apply to future workouts."
+)
+async def update_accessories(
+    program_id: str,
+    day_number: int,
+    update_data: AccessoriesUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    """
+    Update accessory exercises for a specific training day.
+
+    - day_number: 1-4 depending on program type
+    - accessories: List of accessory exercises with exercise_id, sets, reps, and optional circuit_group
+
+    Note: Changes only affect future workouts, not already-completed ones.
+    """
+    return ProgramService.update_accessories(db, current_user, program_id, day_number, update_data)
 
 
 @router.post(
