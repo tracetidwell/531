@@ -10,7 +10,8 @@ from app.schemas.program import (
     ProgramResponse,
     ProgramDetailResponse,
     ProgramUpdateRequest,
-    AccessoriesUpdateRequest
+    AccessoriesUpdateRequest,
+    ProgramDayAccessoriesResponse
 )
 from app.services.program import ProgramService
 from app.models.user import User
@@ -114,6 +115,33 @@ async def get_program_templates(
     - accessories: List of accessory exercises
     """
     return ProgramService.get_program_templates(db, current_user, program_id)
+
+
+@router.get(
+    "/{program_id}/day-accessories",
+    response_model=List[ProgramDayAccessoriesResponse],
+    status_code=status.HTTP_200_OK,
+    summary="Get program day accessories",
+    description="Get accessories organized by day (deduplicated, single source of truth)."
+)
+async def get_program_day_accessories(
+    program_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> List[ProgramDayAccessoriesResponse]:
+    """
+    Get all day accessories for a program.
+
+    This endpoint returns accessories from the new ProgramDayAccessories table,
+    which stores accessories per day rather than per main lift. This eliminates
+    duplication in 2-day programs where multiple lifts share the same day.
+
+    Returns list of day accessories with:
+    - id: Day accessories ID
+    - day_number: Training day (1-4)
+    - accessories: List of accessory exercises
+    """
+    return ProgramService.get_program_day_accessories(db, current_user, program_id)
 
 
 @router.put(
