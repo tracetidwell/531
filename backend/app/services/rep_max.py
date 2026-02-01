@@ -30,7 +30,7 @@ class RepMaxService:
         Returns:
             RepMaxByRepsResponse with rep maxes keyed by rep count
         """
-        lift_enum = LiftType(lift_type)
+        lift_enum = LiftType(lift_type.upper())
 
         # Get all rep maxes for this lift
         rep_maxes = db.query(RepMax).filter(

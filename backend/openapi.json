@@ -1,0 +1,4152 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "5/3/1 Training App",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/": {
+      "get": {
+        "summary": "Root",
+        "description": "Root endpoint.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health Check",
+        "description": "Health check endpoint.",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Register a new user",
+        "description": "Create a new user account with email and password. Returns authentication tokens.",
+        "operationId": "register_api_v1_auth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserRegisterRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login user",
+        "description": "Authenticate a user with email and password. Returns authentication tokens.",
+        "operationId": "login_api_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserLoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Refresh access token",
+        "description": "Get a new access token using a valid refresh token.",
+        "operationId": "refresh_token_api_v1_auth_refresh_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RefreshTokenRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RefreshTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/request-password-reset": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Request password reset",
+        "description": "Request a password reset email. (Not yet implemented)",
+        "operationId": "request_password_reset_api_v1_auth_request_password_reset_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Reset password",
+        "description": "Reset password using reset token. (Not yet implemented)",
+        "operationId": "reset_password_api_v1_auth_reset_password_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get current user",
+        "description": "Get the profile of the currently authenticated user.",
+        "operationId": "get_current_user_profile_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update current user",
+        "description": "Update the profile of the currently authenticated user.",
+        "operationId": "update_current_user_profile_api_v1_users_me_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/programs": {
+      "get": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "List all programs",
+        "description": "Get all programs for the current user (active, completed, paused).",
+        "operationId": "list_programs_api_v1_programs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProgramResponse"
+                  },
+                  "type": "array",
+                  "title": "Response List Programs Api V1 Programs Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Create a new program",
+        "description": "Create a new training program with training maxes, training days, and accessories.",
+        "operationId": "create_program_api_v1_programs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/programs/{program_id}": {
+      "get": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Get program details",
+        "description": "Get detailed information about a specific program.",
+        "operationId": "get_program_api_v1_programs__program_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Update program",
+        "description": "Update program name, status, or end date.",
+        "operationId": "update_program_api_v1_programs__program_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProgramUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProgramResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Delete program",
+        "description": "Delete a program and all associated data (workouts, training maxes, etc.).",
+        "operationId": "delete_program_api_v1_programs__program_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/programs/{program_id}/complete-cycle": {
+      "post": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Complete cycle and increase training maxes",
+        "description": "Finish current cycle and automatically increase training maxes per 5/3/1 methodology.",
+        "operationId": "complete_cycle_api_v1_programs__program_id__complete_cycle_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Complete Cycle Api V1 Programs  Program Id  Complete Cycle Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/programs/{program_id}/generate-next-cycle": {
+      "post": {
+        "tags": [
+          "Programs"
+        ],
+        "summary": "Generate next 4-week cycle",
+        "description": "Create 16 new workouts for the next cycle using updated training maxes.",
+        "operationId": "generate_next_cycle_api_v1_programs__program_id__generate_next_cycle_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "title": "Response Generate Next Cycle Api V1 Programs  Program Id  Generate Next Cycle Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/exercises": {
+      "get": {
+        "tags": [
+          "Exercises"
+        ],
+        "summary": "List exercises",
+        "description": "Get all available exercises (predefined from book + user's custom exercises).",
+        "operationId": "list_exercises_api_v1_exercises_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ExerciseCategory"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by category",
+              "title": "Category"
+            },
+            "description": "Filter by category"
+          },
+          {
+            "name": "is_predefined",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by predefined status",
+              "title": "Is Predefined"
+            },
+            "description": "Filter by predefined status"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ExerciseResponse"
+                  },
+                  "title": "Response List Exercises Api V1 Exercises Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Exercises"
+        ],
+        "summary": "Create custom exercise",
+        "description": "Create a new custom exercise for the current user.",
+        "operationId": "create_exercise_api_v1_exercises_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExerciseCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExerciseResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workouts": {
+      "get": {
+        "tags": [
+          "Workouts"
+        ],
+        "summary": "List workouts",
+        "description": "Get workouts for the current user with optional filters.",
+        "operationId": "list_workouts_api_v1_workouts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by program ID",
+              "title": "Program Id"
+            },
+            "description": "Filter by program ID"
+          },
+          {
+            "name": "workout_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status (scheduled, completed, skipped)",
+              "title": "Workout Status"
+            },
+            "description": "Filter by status (scheduled, completed, skipped)"
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by date >= start_date",
+              "title": "Start Date"
+            },
+            "description": "Filter by date >= start_date"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by date <= end_date",
+              "title": "End Date"
+            },
+            "description": "Filter by date <= end_date"
+          },
+          {
+            "name": "main_lifts",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by main lifts (press, deadlift, bench_press, squat)",
+              "title": "Main Lifts"
+            },
+            "description": "Filter by main lifts (press, deadlift, bench_press, squat)"
+          },
+          {
+            "name": "cycle_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by cycle number",
+              "title": "Cycle Number"
+            },
+            "description": "Filter by cycle number"
+          },
+          {
+            "name": "week_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 4,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by week number (1-4)",
+              "title": "Week Number"
+            },
+            "description": "Filter by week number (1-4)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkoutResponse"
+                  },
+                  "title": "Response List Workouts Api V1 Workouts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workouts/missed": {
+      "get": {
+        "tags": [
+          "Workouts"
+        ],
+        "summary": "Get missed workouts",
+        "description": "Get all workouts that are past their scheduled date but not completed.",
+        "operationId": "get_missed_workouts_api_v1_workouts_missed_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MissedWorkoutsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/workouts/{workout_id}": {
+      "get": {
+        "tags": [
+          "Workouts"
+        ],
+        "summary": "Get workout details",
+        "description": "Get detailed workout information including all prescribed sets.",
+        "operationId": "get_workout_api_v1_workouts__workout_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workout_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workout Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutDetailResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workouts/{workout_id}/complete": {
+      "post": {
+        "tags": [
+          "Workouts"
+        ],
+        "summary": "Complete workout",
+        "description": "Log all sets, mark workout as completed, and get performance analysis.",
+        "operationId": "complete_workout_api_v1_workouts__workout_id__complete_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workout_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workout Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WorkoutCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutCompletionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workouts/{workout_id}/skip": {
+      "post": {
+        "tags": [
+          "Workouts"
+        ],
+        "summary": "Skip workout",
+        "description": "Mark a workout as intentionally skipped.",
+        "operationId": "skip_workout_api_v1_workouts__workout_id__skip_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workout_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workout Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/workouts/{workout_id}/handle-missed": {
+      "post": {
+        "tags": [
+          "Workouts"
+        ],
+        "summary": "Handle missed workout",
+        "description": "Skip or reschedule a missed workout.",
+        "operationId": "handle_missed_workout_api_v1_workouts__workout_id__handle_missed_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "workout_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workout Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HandleMissedWorkoutRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HandleMissedWorkoutResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rep-maxes": {
+      "get": {
+        "tags": [
+          "Rep Maxes"
+        ],
+        "summary": "Get all rep maxes",
+        "description": "Get personal records (rep maxes) for all lifts across all rep ranges (1-12).",
+        "operationId": "get_all_rep_maxes_api_v1_rep_maxes_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AllRepMaxesResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/rep-maxes/{lift_type}": {
+      "get": {
+        "tags": [
+          "Rep Maxes"
+        ],
+        "summary": "Get rep maxes for specific lift",
+        "description": "Get personal records for a specific lift across all rep ranges (1-12).",
+        "operationId": "get_rep_maxes_by_lift_api_v1_rep_maxes__lift_type__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lift_type",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^(squat|deadlift|bench_press|press)$",
+              "description": "Lift type",
+              "title": "Lift Type"
+            },
+            "description": "Lift type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepMaxByRepsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/warmup-templates": {
+      "get": {
+        "tags": [
+          "Warmup Templates"
+        ],
+        "summary": "List warmup templates",
+        "description": "Get all warmup templates for the current user, optionally filtered by lift type.",
+        "operationId": "list_warmup_templates_api_v1_warmup_templates_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "lift_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LiftType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by lift type",
+              "title": "Lift Type"
+            },
+            "description": "Filter by lift type"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WarmupTemplateResponse"
+                  },
+                  "title": "Response List Warmup Templates Api V1 Warmup Templates Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Warmup Templates"
+        ],
+        "summary": "Create warmup template",
+        "description": "Create a new custom warmup template.",
+        "operationId": "create_warmup_template_api_v1_warmup_templates_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WarmupTemplateCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarmupTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/warmup-templates/{template_id}": {
+      "get": {
+        "tags": [
+          "Warmup Templates"
+        ],
+        "summary": "Get warmup template",
+        "description": "Get a specific warmup template by ID.",
+        "operationId": "get_warmup_template_api_v1_warmup_templates__template_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarmupTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Warmup Templates"
+        ],
+        "summary": "Update warmup template",
+        "description": "Update an existing warmup template.",
+        "operationId": "update_warmup_template_api_v1_warmup_templates__template_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WarmupTemplateCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WarmupTemplateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Warmup Templates"
+        ],
+        "summary": "Delete warmup template",
+        "description": "Delete a warmup template.",
+        "operationId": "delete_warmup_template_api_v1_warmup_templates__template_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "template_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Template Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/programs/{program_id}/training-max-progression": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Get training max progression",
+        "description": "Get training max progression over time for all lifts in a program.",
+        "operationId": "get_training_max_progression_api_v1_analytics_programs__program_id__training_max_progression_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrainingMaxProgressionResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analytics/programs/{program_id}/workout-history": {
+      "get": {
+        "tags": [
+          "Analytics"
+        ],
+        "summary": "Get workout history",
+        "description": "Get detailed workout history with performance statistics.",
+        "operationId": "get_workout_history_api_v1_analytics_programs__program_id__workout_history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "program_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Program Id"
+            }
+          },
+          {
+            "name": "lift_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/LiftType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by lift type",
+              "title": "Lift Type"
+            },
+            "description": "Filter by lift type"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Number of results per page",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Number of results per page"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Offset for pagination",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "Offset for pagination"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkoutHistoryResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AccessoryExerciseInput": {
+        "properties": {
+          "exercise_id": {
+            "type": "string",
+            "title": "Exercise Id",
+            "description": "ID of the exercise"
+          },
+          "sets": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Sets",
+            "description": "Number of sets",
+            "default": 5
+          },
+          "reps": {
+            "type": "integer",
+            "maximum": 50.0,
+            "minimum": 1.0,
+            "title": "Reps",
+            "description": "Number of reps",
+            "default": 12
+          },
+          "circuit_group": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Circuit Group",
+            "description": "Circuit group number (exercises with same number are done as a circuit). None = standalone exercise."
+          }
+        },
+        "type": "object",
+        "required": [
+          "exercise_id"
+        ],
+        "title": "AccessoryExerciseInput",
+        "description": "Schema for an accessory exercise in a program.",
+        "example": {
+          "circuit_group": 1,
+          "exercise_id": "uuid-here",
+          "reps": 12,
+          "sets": 5
+        }
+      },
+      "AllRepMaxesResponse": {
+        "properties": {
+          "lifts": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "additionalProperties": {
+                    "$ref": "#/components/schemas/RepMaxRecord"
+                  },
+                  "type": "object"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "type": "object",
+            "title": "Lifts",
+            "description": "Rep maxes keyed by lift type (SQUAT, DEADLIFT, BENCH_PRESS, PRESS)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lifts"
+        ],
+        "title": "AllRepMaxesResponse",
+        "description": "All rep maxes for all lifts."
+      },
+      "CycleFailedRepsAnalysis": {
+        "properties": {
+          "recommendation": {
+            "type": "string",
+            "title": "Recommendation",
+            "description": "Recommendation type: none, adjust_training_max, deload_then_adjust"
+          },
+          "lifts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Lifts",
+            "description": "Affected lift types"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Human-readable recommendation message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "recommendation",
+          "message"
+        ],
+        "title": "CycleFailedRepsAnalysis",
+        "description": "Analysis of failed reps across an entire cycle."
+      },
+      "ExerciseCategory": {
+        "type": "string",
+        "enum": [
+          "PUSH",
+          "PULL",
+          "LEGS",
+          "CORE"
+        ],
+        "title": "ExerciseCategory",
+        "description": "Exercise category."
+      },
+      "ExerciseCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Exercise name"
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExerciseCategory"
+              }
+            ],
+            "description": "Exercise category"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Exercise description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "category"
+        ],
+        "title": "ExerciseCreateRequest",
+        "description": "Schema for creating a custom exercise.",
+        "example": {
+          "category": "push",
+          "description": "A custom accessory exercise",
+          "name": "My Custom Exercise"
+        }
+      },
+      "ExerciseResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Exercise ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Exercise name"
+          },
+          "category": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ExerciseCategory"
+              }
+            ],
+            "description": "Exercise category"
+          },
+          "is_predefined": {
+            "type": "boolean",
+            "title": "Is Predefined",
+            "description": "Whether this is a predefined exercise from the book"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Exercise description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "category",
+          "is_predefined"
+        ],
+        "title": "ExerciseResponse",
+        "description": "Schema for exercise response.",
+        "example": {
+          "category": "push",
+          "description": "Bench press with dumbbells",
+          "id": "uuid-here",
+          "is_predefined": true,
+          "name": "Dumbbell Bench Press"
+        }
+      },
+      "FailedSetInfo": {
+        "properties": {
+          "set_number": {
+            "type": "integer",
+            "title": "Set Number",
+            "description": "Which set failed (1-3)"
+          },
+          "set_type": {
+            "type": "string",
+            "title": "Set Type",
+            "description": "working or amrap"
+          },
+          "prescribed_reps": {
+            "type": "integer",
+            "title": "Prescribed Reps",
+            "description": "Target reps"
+          },
+          "actual_reps": {
+            "type": "integer",
+            "title": "Actual Reps",
+            "description": "Actual reps performed"
+          },
+          "prescribed_weight": {
+            "type": "number",
+            "title": "Prescribed Weight",
+            "description": "Target weight"
+          }
+        },
+        "type": "object",
+        "required": [
+          "set_number",
+          "set_type",
+          "prescribed_reps",
+          "actual_reps",
+          "prescribed_weight"
+        ],
+        "title": "FailedSetInfo",
+        "description": "Information about a failed set."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HandleMissedWorkoutRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "Action to take: 'skip' or 'reschedule'"
+          },
+          "reschedule_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reschedule Date",
+            "description": "Date to reschedule to (required if action is 'reschedule')"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "HandleMissedWorkoutRequest",
+        "description": "Request to handle a missed workout."
+      },
+      "HandleMissedWorkoutResponse": {
+        "properties": {
+          "workout": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkoutResponse"
+              }
+            ],
+            "description": "The updated workout"
+          },
+          "action_taken": {
+            "type": "string",
+            "title": "Action Taken",
+            "description": "Action that was taken"
+          },
+          "rescheduled_count": {
+            "type": "integer",
+            "title": "Rescheduled Count",
+            "description": "Number of workouts rescheduled (including cascaded)",
+            "default": 0
+          }
+        },
+        "type": "object",
+        "required": [
+          "workout",
+          "action_taken"
+        ],
+        "title": "HandleMissedWorkoutResponse",
+        "description": "Response after handling a missed workout."
+      },
+      "LiftAnalysis": {
+        "properties": {
+          "lift_type": {
+            "type": "string",
+            "title": "Lift Type",
+            "description": "The lift type (squat, deadlift, bench_press, press)"
+          },
+          "all_targets_met": {
+            "type": "boolean",
+            "title": "All Targets Met",
+            "description": "Whether all working set targets were met"
+          },
+          "failed_sets": {
+            "items": {
+              "$ref": "#/components/schemas/FailedSetInfo"
+            },
+            "type": "array",
+            "title": "Failed Sets",
+            "description": "List of sets that failed to meet target"
+          },
+          "amrap_reps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amrap Reps",
+            "description": "Reps achieved on AMRAP set (if applicable)"
+          },
+          "amrap_minimum": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amrap Minimum",
+            "description": "Minimum required reps on AMRAP"
+          },
+          "amrap_exceeded_minimum": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amrap Exceeded Minimum",
+            "description": "Whether AMRAP exceeded minimum"
+          },
+          "current_training_max": {
+            "type": "number",
+            "title": "Current Training Max",
+            "description": "Current training max for this lift"
+          },
+          "estimated_1rm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated 1Rm",
+            "description": "Estimated 1RM based on AMRAP performance (Epley formula)"
+          },
+          "suggested_training_max": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suggested Training Max",
+            "description": "Suggested new training max (90% of estimated 1RM)"
+          },
+          "recommendation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation",
+            "description": "Recommendation based on performance"
+          },
+          "recommendation_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recommendation Type",
+            "description": "Type of recommendation: info, warning, or critical"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lift_type",
+          "all_targets_met",
+          "current_training_max"
+        ],
+        "title": "LiftAnalysis",
+        "description": "Analysis of performance for a single lift."
+      },
+      "LiftType": {
+        "type": "string",
+        "enum": [
+          "SQUAT",
+          "DEADLIFT",
+          "BENCH_PRESS",
+          "PRESS"
+        ],
+        "title": "LiftType",
+        "description": "Main lift types."
+      },
+      "MessageResponse": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "description": "Response message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "MessageResponse",
+        "description": "Generic message response.",
+        "example": {
+          "message": "Operation completed successfully"
+        }
+      },
+      "MissedWorkoutInfo": {
+        "properties": {
+          "workout": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkoutResponse"
+              }
+            ],
+            "description": "The missed workout"
+          },
+          "days_overdue": {
+            "type": "integer",
+            "title": "Days Overdue",
+            "description": "Days since scheduled date"
+          },
+          "can_reschedule": {
+            "type": "boolean",
+            "title": "Can Reschedule",
+            "description": "Whether rescheduling is possible"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workout",
+          "days_overdue",
+          "can_reschedule"
+        ],
+        "title": "MissedWorkoutInfo",
+        "description": "Information about a missed workout."
+      },
+      "MissedWorkoutPreference": {
+        "type": "string",
+        "enum": [
+          "SKIP",
+          "RESCHEDULE",
+          "ASK"
+        ],
+        "title": "MissedWorkoutPreference",
+        "description": "How to handle missed workouts."
+      },
+      "MissedWorkoutsResponse": {
+        "properties": {
+          "missed_workouts": {
+            "items": {
+              "$ref": "#/components/schemas/MissedWorkoutInfo"
+            },
+            "type": "array",
+            "title": "Missed Workouts",
+            "description": "List of missed workouts"
+          },
+          "user_preference": {
+            "type": "string",
+            "title": "User Preference",
+            "description": "User's missed workout preference (skip/reschedule/ask)"
+          },
+          "count": {
+            "type": "integer",
+            "title": "Count",
+            "description": "Number of missed workouts"
+          }
+        },
+        "type": "object",
+        "required": [
+          "missed_workouts",
+          "user_preference",
+          "count"
+        ],
+        "title": "MissedWorkoutsResponse",
+        "description": "Response containing all missed workouts."
+      },
+      "ProgramCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Program name"
+          },
+          "template_type": {
+            "type": "string",
+            "title": "Template Type",
+            "description": "Program template (2_day, 3_day, or 4_day)",
+            "default": "4_day"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "Program start date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "Program end date (optional)"
+          },
+          "target_cycles": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 52.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Cycles",
+            "description": "Number of cycles to run (optional)"
+          },
+          "training_days": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 4,
+            "minItems": 2,
+            "title": "Training Days",
+            "description": "Days to train (2-4 days)"
+          },
+          "include_deload": {
+            "type": "boolean",
+            "title": "Include Deload",
+            "description": "Include deload week (week 4) in each cycle",
+            "default": true
+          },
+          "training_maxes": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/TrainingMaxInput"
+              }
+            ],
+            "description": "Training maxes for each lift"
+          },
+          "accessories": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/AccessoryExerciseInput"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Accessories",
+            "description": "Accessories per day (keys: '1','2' for 2_day, '1','2','3' for 3_day, or '1','2','3','4' for 4_day)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "start_date",
+          "training_days",
+          "training_maxes",
+          "accessories"
+        ],
+        "title": "ProgramCreateRequest",
+        "description": "Schema for creating a new program.",
+        "example": {
+          "accessories": {
+            "1": [
+              {
+                "exercise_id": "uuid-1",
+                "reps": 12,
+                "sets": 5
+              },
+              {
+                "exercise_id": "uuid-2",
+                "reps": 12,
+                "sets": 5
+              }
+            ],
+            "2": [
+              {
+                "exercise_id": "uuid-3",
+                "reps": 12,
+                "sets": 5
+              }
+            ],
+            "3": [
+              {
+                "exercise_id": "uuid-4",
+                "reps": 12,
+                "sets": 5
+              },
+              {
+                "exercise_id": "uuid-5",
+                "reps": 12,
+                "sets": 5
+              }
+            ],
+            "4": [
+              {
+                "exercise_id": "uuid-6",
+                "reps": 12,
+                "sets": 5
+              }
+            ]
+          },
+          "name": "Winter 2025 Program",
+          "start_date": "2025-01-01",
+          "target_cycles": 4,
+          "template_type": "4_day",
+          "training_days": [
+            "monday",
+            "tuesday",
+            "thursday",
+            "saturday"
+          ],
+          "training_maxes": {
+            "bench_press": 225.0,
+            "deadlift": 350.0,
+            "press": 150.0,
+            "squat": 300.0
+          }
+        }
+      },
+      "ProgramDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Program ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Program name"
+          },
+          "template_type": {
+            "type": "string",
+            "title": "Template Type",
+            "description": "Program template type"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "Start date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date"
+          },
+          "target_cycles": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Cycles",
+            "description": "Number of cycles to run"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProgramStatus"
+              }
+            ],
+            "description": "Program status"
+          },
+          "training_days": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Training Days",
+            "description": "Training days"
+          },
+          "current_cycle": {
+            "type": "integer",
+            "title": "Current Cycle",
+            "description": "Current cycle number",
+            "default": 1
+          },
+          "current_week": {
+            "type": "integer",
+            "title": "Current Week",
+            "description": "Current week number",
+            "default": 1
+          },
+          "training_maxes": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/TrainingMaxResponse"
+            },
+            "type": "object",
+            "title": "Training Maxes",
+            "description": "Current training maxes"
+          },
+          "workouts_generated": {
+            "type": "integer",
+            "title": "Workouts Generated",
+            "description": "Number of workouts generated"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Creation timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "template_type",
+          "start_date",
+          "status",
+          "training_days",
+          "training_maxes",
+          "workouts_generated",
+          "created_at"
+        ],
+        "title": "ProgramDetailResponse",
+        "description": "Schema for detailed program response with training maxes.",
+        "example": {
+          "created_at": "2025-01-01T10:00:00",
+          "current_cycle": 1,
+          "current_week": 1,
+          "id": "uuid-here",
+          "name": "Winter 2025 Program",
+          "start_date": "2025-01-01",
+          "status": "active",
+          "target_cycles": 4,
+          "template_type": "4_day",
+          "training_days": [
+            "monday",
+            "tuesday",
+            "thursday",
+            "saturday"
+          ],
+          "training_maxes": {
+            "bench_press": {
+              "cycle": 1,
+              "effective_date": "2025-01-01",
+              "value": 225.0
+            },
+            "deadlift": {
+              "cycle": 1,
+              "effective_date": "2025-01-01",
+              "value": 350.0
+            },
+            "press": {
+              "cycle": 1,
+              "effective_date": "2025-01-01",
+              "value": 150.0
+            },
+            "squat": {
+              "cycle": 1,
+              "effective_date": "2025-01-01",
+              "value": 300.0
+            }
+          },
+          "workouts_generated": 16
+        }
+      },
+      "ProgramResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Program ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Program name"
+          },
+          "template_type": {
+            "type": "string",
+            "title": "Template Type",
+            "description": "Program template type"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Start Date",
+            "description": "Start date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date"
+          },
+          "status": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/ProgramStatus"
+              }
+            ],
+            "description": "Program status"
+          },
+          "training_days": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Training Days",
+            "description": "Training days"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Creation timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "template_type",
+          "start_date",
+          "status",
+          "training_days",
+          "created_at"
+        ],
+        "title": "ProgramResponse",
+        "description": "Schema for program response.",
+        "example": {
+          "created_at": "2025-01-01T10:00:00",
+          "id": "uuid-here",
+          "name": "Winter 2025 Program",
+          "start_date": "2025-01-01",
+          "status": "active",
+          "template_type": "4_day",
+          "training_days": [
+            "monday",
+            "tuesday",
+            "thursday",
+            "saturday"
+          ]
+        }
+      },
+      "ProgramStatus": {
+        "type": "string",
+        "enum": [
+          "ACTIVE",
+          "COMPLETED",
+          "PAUSED"
+        ],
+        "title": "ProgramStatus",
+        "description": "Program status."
+      },
+      "ProgramUpdateRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Program name"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProgramStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Program status"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date",
+            "description": "End date"
+          },
+          "target_cycles": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 52.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Target Cycles",
+            "description": "Number of cycles to run"
+          }
+        },
+        "type": "object",
+        "title": "ProgramUpdateRequest",
+        "description": "Schema for updating a program.",
+        "example": {
+          "name": "Updated Program Name",
+          "status": "paused",
+          "target_cycles": 4
+        }
+      },
+      "RefreshTokenRequest": {
+        "properties": {
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "The refresh token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "refresh_token"
+        ],
+        "title": "RefreshTokenRequest",
+        "description": "Schema for token refresh request.",
+        "example": {
+          "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        }
+      },
+      "RefreshTokenResponse": {
+        "properties": {
+          "access_token": {
+            "type": "string",
+            "title": "Access Token",
+            "description": "New JWT access token"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "description": "Token type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "access_token"
+        ],
+        "title": "RefreshTokenResponse",
+        "description": "Schema for token refresh response.",
+        "example": {
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+          "token_type": "bearer"
+        }
+      },
+      "RepMaxByRepsResponse": {
+        "properties": {
+          "lift_type": {
+            "type": "string",
+            "title": "Lift Type",
+            "description": "Lift type (squat, deadlift, bench_press, press)"
+          },
+          "rep_maxes": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RepMaxRecord"
+            },
+            "type": "object",
+            "title": "Rep Maxes",
+            "description": "Rep maxes keyed by rep count (1-12)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lift_type",
+          "rep_maxes"
+        ],
+        "title": "RepMaxByRepsResponse",
+        "description": "Rep maxes organized by rep count for a single lift."
+      },
+      "RepMaxRecord": {
+        "properties": {
+          "weight": {
+            "type": "number",
+            "title": "Weight",
+            "description": "Weight lifted"
+          },
+          "calculated_1rm": {
+            "type": "number",
+            "title": "Calculated 1Rm",
+            "description": "Calculated 1RM using Epley formula"
+          },
+          "achieved_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Achieved Date",
+            "description": "Date the PR was achieved"
+          },
+          "weight_unit": {
+            "type": "string",
+            "title": "Weight Unit",
+            "description": "Weight unit (lbs or kg)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weight",
+          "calculated_1rm",
+          "achieved_date",
+          "weight_unit"
+        ],
+        "title": "RepMaxRecord",
+        "description": "Individual rep max record."
+      },
+      "SetLogRequest": {
+        "properties": {
+          "set_type": {
+            "type": "string",
+            "title": "Set Type",
+            "description": "warmup, working, or accessory"
+          },
+          "set_number": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Set Number",
+            "description": "Set number (1-based)"
+          },
+          "exercise_id": {
+            "type": "string",
+            "title": "Exercise Id",
+            "description": "Exercise ID (for accessories)"
+          },
+          "lift_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lift Type",
+            "description": "Lift type for multi-lift workouts (squat, bench, deadlift, press)"
+          },
+          "actual_reps": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Actual Reps",
+            "description": "Actual reps completed"
+          },
+          "actual_weight": {
+            "type": "number",
+            "minimum": 0.0,
+            "title": "Actual Weight",
+            "description": "Actual weight used"
+          },
+          "weight_unit": {
+            "type": "string",
+            "title": "Weight Unit",
+            "description": "lbs or kg",
+            "default": "lbs"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "set_type",
+          "set_number",
+          "exercise_id",
+          "actual_reps",
+          "actual_weight"
+        ],
+        "title": "SetLogRequest",
+        "description": "Request to log a single set."
+      },
+      "TokenResponse": {
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "title": "User Id",
+            "description": "User's unique identifier"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name",
+            "description": "User's first name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name",
+            "description": "User's last name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "User's email address"
+          },
+          "access_token": {
+            "type": "string",
+            "title": "Access Token",
+            "description": "JWT access token (15 min expiry)"
+          },
+          "refresh_token": {
+            "type": "string",
+            "title": "Refresh Token",
+            "description": "JWT refresh token (7 day expiry)"
+          },
+          "token_type": {
+            "type": "string",
+            "title": "Token Type",
+            "description": "Token type",
+            "default": "bearer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "first_name",
+          "last_name",
+          "email",
+          "access_token",
+          "refresh_token"
+        ],
+        "title": "TokenResponse",
+        "description": "Schema for token response.",
+        "example": {
+          "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+          "email": "john.doe@example.com",
+          "first_name": "John",
+          "last_name": "Doe",
+          "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+          "token_type": "bearer",
+          "user_id": "123e4567-e89b-12d3-a456-426614174000"
+        }
+      },
+      "TrainingMaxDataPoint": {
+        "properties": {
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "Date when this training max became effective (YYYY-MM-DD)"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value",
+            "description": "Training max value"
+          },
+          "cycle": {
+            "type": "integer",
+            "title": "Cycle",
+            "description": "Cycle number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "date",
+          "value",
+          "cycle"
+        ],
+        "title": "TrainingMaxDataPoint",
+        "description": "Single data point in training max progression.",
+        "example": {
+          "cycle": 1,
+          "date": "2024-01-01",
+          "value": 275.0
+        }
+      },
+      "TrainingMaxInput": {
+        "properties": {
+          "squat": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Squat",
+            "description": "Training max for squat (in user's preferred unit)"
+          },
+          "deadlift": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Deadlift",
+            "description": "Training max for deadlift"
+          },
+          "bench_press": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Bench Press",
+            "description": "Training max for bench press"
+          },
+          "press": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Press",
+            "description": "Training max for overhead press"
+          }
+        },
+        "type": "object",
+        "required": [
+          "squat",
+          "deadlift",
+          "bench_press",
+          "press"
+        ],
+        "title": "TrainingMaxInput",
+        "description": "Schema for setting training max for a lift.",
+        "example": {
+          "bench_press": 225.0,
+          "deadlift": 350.0,
+          "press": 150.0,
+          "squat": 300.0
+        }
+      },
+      "TrainingMaxProgressionResponse": {
+        "properties": {
+          "data": {
+            "additionalProperties": {
+              "items": {
+                "$ref": "#/components/schemas/TrainingMaxDataPoint"
+              },
+              "type": "array"
+            },
+            "type": "object",
+            "title": "Data",
+            "description": "Training max progression data grouped by lift type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "data"
+        ],
+        "title": "TrainingMaxProgressionResponse",
+        "description": "Response for training max progression analytics.",
+        "example": {
+          "data": {
+            "deadlift": [
+              {
+                "cycle": 1,
+                "date": "2024-01-01",
+                "value": 325.0
+              },
+              {
+                "cycle": 2,
+                "date": "2024-01-29",
+                "value": 335.0
+              }
+            ],
+            "squat": [
+              {
+                "cycle": 1,
+                "date": "2024-01-01",
+                "value": 275.0
+              },
+              {
+                "cycle": 2,
+                "date": "2024-01-29",
+                "value": 285.0
+              },
+              {
+                "cycle": 3,
+                "date": "2024-02-26",
+                "value": 295.0
+              }
+            ]
+          }
+        }
+      },
+      "TrainingMaxResponse": {
+        "properties": {
+          "value": {
+            "type": "number",
+            "title": "Value",
+            "description": "Current training max value"
+          },
+          "effective_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Effective Date",
+            "description": "Date when this TM became effective"
+          },
+          "cycle": {
+            "type": "integer",
+            "title": "Cycle",
+            "description": "Cycle number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "value",
+          "effective_date",
+          "cycle"
+        ],
+        "title": "TrainingMaxResponse",
+        "description": "Schema for training max response.",
+        "example": {
+          "cycle": 1,
+          "effective_date": "2025-01-01",
+          "value": 300.0
+        }
+      },
+      "UserLoginRequest": {
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "User's email address"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password",
+            "description": "User's password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "email",
+          "password"
+        ],
+        "title": "UserLoginRequest",
+        "description": "Schema for user login request.",
+        "example": {
+          "email": "john.doe@example.com",
+          "password": "SecurePass123"
+        }
+      },
+      "UserRegisterRequest": {
+        "properties": {
+          "first_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "First Name",
+            "description": "User's first name"
+          },
+          "last_name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Last Name",
+            "description": "User's last name"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "title": "Email",
+            "description": "User's email address (used for login)"
+          },
+          "password": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Password",
+            "description": "User's password"
+          }
+        },
+        "type": "object",
+        "required": [
+          "first_name",
+          "last_name",
+          "email",
+          "password"
+        ],
+        "title": "UserRegisterRequest",
+        "description": "Schema for user registration request.",
+        "example": {
+          "email": "john.doe@example.com",
+          "first_name": "John",
+          "last_name": "Doe",
+          "password": "SecurePass123"
+        }
+      },
+      "UserResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "User's unique identifier"
+          },
+          "first_name": {
+            "type": "string",
+            "title": "First Name",
+            "description": "User's first name"
+          },
+          "last_name": {
+            "type": "string",
+            "title": "Last Name",
+            "description": "User's last name"
+          },
+          "email": {
+            "type": "string",
+            "title": "Email",
+            "description": "User's email address"
+          },
+          "weight_unit_preference": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeightUnit"
+              }
+            ],
+            "description": "Preferred weight unit"
+          },
+          "rounding_increment": {
+            "type": "number",
+            "title": "Rounding Increment",
+            "description": "Weight rounding increment"
+          },
+          "missed_workout_preference": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/MissedWorkoutPreference"
+              }
+            ],
+            "description": "How to handle missed workouts"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At",
+            "description": "Account creation timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "first_name",
+          "last_name",
+          "email",
+          "weight_unit_preference",
+          "rounding_increment",
+          "missed_workout_preference",
+          "created_at"
+        ],
+        "title": "UserResponse",
+        "description": "Schema for user response.",
+        "example": {
+          "created_at": "2024-01-15T10:30:00",
+          "email": "john.doe@example.com",
+          "first_name": "John",
+          "id": "123e4567-e89b-12d3-a456-426614174000",
+          "last_name": "Doe",
+          "missed_workout_preference": "ask",
+          "rounding_increment": 5.0,
+          "weight_unit_preference": "lbs"
+        }
+      },
+      "UserUpdateRequest": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name",
+            "description": "User's first name"
+          },
+          "last_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Name",
+            "description": "User's last name"
+          },
+          "weight_unit_preference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WeightUnit"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Preferred weight unit"
+          },
+          "rounding_increment": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 10.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rounding Increment",
+            "description": "Weight rounding increment"
+          },
+          "missed_workout_preference": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MissedWorkoutPreference"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "How to handle missed workouts"
+          }
+        },
+        "type": "object",
+        "title": "UserUpdateRequest",
+        "description": "Schema for updating user profile.",
+        "example": {
+          "first_name": "John",
+          "last_name": "Doe",
+          "missed_workout_preference": "reschedule",
+          "rounding_increment": 2.5,
+          "weight_unit_preference": "kg"
+        }
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "WarmupSet": {
+        "properties": {
+          "weight_type": {
+            "type": "string",
+            "title": "Weight Type",
+            "description": "Type of weight: 'bar', 'fixed', or 'percentage'"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value",
+            "description": "Weight value (null for 'bar', fixed weight for 'fixed', percentage for 'percentage')"
+          },
+          "reps": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Reps",
+            "description": "Number of reps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "weight_type",
+          "reps"
+        ],
+        "title": "WarmupSet",
+        "description": "Schema for a single warmup set.",
+        "example": {
+          "reps": 5,
+          "value": 50,
+          "weight_type": "percentage"
+        }
+      },
+      "WarmupTemplateCreateRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Template name"
+          },
+          "lift_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LiftType"
+              }
+            ],
+            "description": "Lift this template applies to"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "description": "Whether this should be the default template for this lift",
+            "default": false
+          },
+          "sets": {
+            "items": {
+              "$ref": "#/components/schemas/WarmupSet"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Sets",
+            "description": "Array of warmup sets (at least one required)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "lift_type",
+          "sets"
+        ],
+        "title": "WarmupTemplateCreateRequest",
+        "description": "Schema for creating a warmup template.",
+        "example": {
+          "is_default": false,
+          "lift_type": "squat",
+          "name": "My Squat Warmup",
+          "sets": [
+            {
+              "reps": 10,
+              "weight_type": "bar"
+            },
+            {
+              "reps": 5,
+              "value": 135,
+              "weight_type": "fixed"
+            },
+            {
+              "reps": 5,
+              "value": 50,
+              "weight_type": "percentage"
+            },
+            {
+              "reps": 2,
+              "value": 70,
+              "weight_type": "percentage"
+            }
+          ]
+        }
+      },
+      "WarmupTemplateResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Warmup template ID"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name",
+            "description": "Template name"
+          },
+          "lift_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LiftType"
+              }
+            ],
+            "description": "Lift this template applies to"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "description": "Whether this is the default template for this lift"
+          },
+          "sets": {
+            "items": {
+              "$ref": "#/components/schemas/WarmupSet"
+            },
+            "type": "array",
+            "title": "Sets",
+            "description": "Array of warmup sets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "lift_type",
+          "is_default",
+          "sets"
+        ],
+        "title": "WarmupTemplateResponse",
+        "description": "Schema for warmup template response.",
+        "example": {
+          "id": "uuid-here",
+          "is_default": true,
+          "lift_type": "squat",
+          "name": "My Squat Warmup",
+          "sets": [
+            {
+              "reps": 10,
+              "weight_type": "bar"
+            },
+            {
+              "reps": 5,
+              "value": 135,
+              "weight_type": "fixed"
+            },
+            {
+              "reps": 5,
+              "value": 50,
+              "weight_type": "percentage"
+            },
+            {
+              "reps": 2,
+              "value": 70,
+              "weight_type": "percentage"
+            }
+          ]
+        }
+      },
+      "WeekType": {
+        "type": "string",
+        "enum": [
+          "WEEK_1_5S",
+          "WEEK_2_3S",
+          "WEEK_3_531",
+          "WEEK_4_DELOAD"
+        ],
+        "title": "WeekType",
+        "description": "5/3/1 week type."
+      },
+      "WeightUnit": {
+        "type": "string",
+        "enum": [
+          "LBS",
+          "KG"
+        ],
+        "title": "WeightUnit",
+        "description": "Weight unit preference."
+      },
+      "WorkoutAnalysis": {
+        "properties": {
+          "overall_success": {
+            "type": "boolean",
+            "title": "Overall Success",
+            "description": "Whether all lifts met their targets"
+          },
+          "lifts": {
+            "items": {
+              "$ref": "#/components/schemas/LiftAnalysis"
+            },
+            "type": "array",
+            "title": "Lifts",
+            "description": "Analysis for each lift in the workout"
+          },
+          "summary": {
+            "type": "string",
+            "title": "Summary",
+            "description": "Human-readable summary of workout performance"
+          },
+          "has_recommendations": {
+            "type": "boolean",
+            "title": "Has Recommendations",
+            "description": "Whether there are any recommendations"
+          },
+          "cycle_analysis": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CycleFailedRepsAnalysis"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Cycle-level analysis if there are failures across the cycle"
+          }
+        },
+        "type": "object",
+        "required": [
+          "overall_success",
+          "lifts",
+          "summary",
+          "has_recommendations"
+        ],
+        "title": "WorkoutAnalysis",
+        "description": "Complete analysis of a workout."
+      },
+      "WorkoutCompleteRequest": {
+        "properties": {
+          "sets": {
+            "items": {
+              "$ref": "#/components/schemas/SetLogRequest"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Sets",
+            "description": "All sets performed"
+          },
+          "workout_notes": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workout Notes"
+          },
+          "completed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Date",
+            "description": "When workout was completed (defaults to now)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sets"
+        ],
+        "title": "WorkoutCompleteRequest",
+        "description": "Request to complete a workout with all logged sets."
+      },
+      "WorkoutCompletionResponse": {
+        "properties": {
+          "workout": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkoutResponse"
+              }
+            ],
+            "description": "The completed workout"
+          },
+          "analysis": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkoutAnalysis"
+              }
+            ],
+            "description": "Analysis of workout performance"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workout",
+          "analysis"
+        ],
+        "title": "WorkoutCompletionResponse",
+        "description": "Response for workout completion including analysis."
+      },
+      "WorkoutDetailResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "program_id": {
+            "type": "string",
+            "title": "Program Id"
+          },
+          "scheduled_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scheduled Date"
+          },
+          "completed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Date"
+          },
+          "cycle_number": {
+            "type": "integer",
+            "title": "Cycle Number"
+          },
+          "week_number": {
+            "type": "integer",
+            "title": "Week Number"
+          },
+          "week_type": {
+            "type": "string",
+            "title": "Week Type"
+          },
+          "main_lifts": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutMainLiftResponse"
+            },
+            "type": "array",
+            "title": "Main Lifts"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "sets_by_lift": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/WorkoutSetsForLift"
+            },
+            "type": "object",
+            "title": "Sets By Lift"
+          },
+          "accessory_sets": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutSetResponse"
+            },
+            "type": "array",
+            "title": "Accessory Sets"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "program_id",
+          "scheduled_date",
+          "completed_date",
+          "cycle_number",
+          "week_number",
+          "week_type",
+          "main_lifts",
+          "status",
+          "sets_by_lift",
+          "accessory_sets",
+          "notes",
+          "created_at"
+        ],
+        "title": "WorkoutDetailResponse",
+        "description": "Detailed workout with prescribed sets organized by lift."
+      },
+      "WorkoutHistoryItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "Workout ID"
+          },
+          "date": {
+            "type": "string",
+            "title": "Date",
+            "description": "Date workout was completed (YYYY-MM-DD)"
+          },
+          "lift": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/LiftType"
+              }
+            ],
+            "description": "Main lift performed"
+          },
+          "cycle": {
+            "type": "integer",
+            "title": "Cycle",
+            "description": "Cycle number"
+          },
+          "week": {
+            "type": "integer",
+            "title": "Week",
+            "description": "Week number (1-4)"
+          },
+          "week_type": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WeekType"
+              }
+            ],
+            "description": "Week type (5s, 3s, 5/3/1, deload)"
+          },
+          "key_stats": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/WorkoutKeyStats"
+              }
+            ],
+            "description": "Key performance statistics"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Workout notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "date",
+          "lift",
+          "cycle",
+          "week",
+          "week_type",
+          "key_stats"
+        ],
+        "title": "WorkoutHistoryItem",
+        "description": "Single workout in history.",
+        "example": {
+          "cycle": 3,
+          "date": "2024-12-15",
+          "id": "uuid-here",
+          "key_stats": {
+            "amrap_reps": 8,
+            "amrap_weight": 270.0,
+            "calculated_1rm": 342.0
+          },
+          "lift": "squat",
+          "notes": "Felt strong today!",
+          "week": 2,
+          "week_type": "week_2_3s"
+        }
+      },
+      "WorkoutHistoryResponse": {
+        "properties": {
+          "workouts": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutHistoryItem"
+            },
+            "type": "array",
+            "title": "Workouts",
+            "description": "List of workout history items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total",
+            "description": "Total number of workouts matching criteria"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit",
+            "description": "Number of results per page"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset",
+            "description": "Offset for pagination"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workouts",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "WorkoutHistoryResponse",
+        "description": "Response for workout history analytics.",
+        "example": {
+          "limit": 20,
+          "offset": 0,
+          "total": 45,
+          "workouts": [
+            {
+              "cycle": 3,
+              "date": "2024-12-15",
+              "id": "uuid-here",
+              "key_stats": {
+                "amrap_reps": 8,
+                "amrap_weight": 270.0,
+                "calculated_1rm": 342.0
+              },
+              "lift": "squat",
+              "notes": "Felt strong!",
+              "week": 2,
+              "week_type": "week_2_3s"
+            }
+          ]
+        }
+      },
+      "WorkoutKeyStats": {
+        "properties": {
+          "amrap_reps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amrap Reps",
+            "description": "Reps completed in AMRAP set"
+          },
+          "amrap_weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amrap Weight",
+            "description": "Weight used in AMRAP set"
+          },
+          "calculated_1rm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculated 1Rm",
+            "description": "Calculated 1RM from AMRAP set"
+          }
+        },
+        "type": "object",
+        "title": "WorkoutKeyStats",
+        "description": "Key statistics from a workout (AMRAP performance).",
+        "example": {
+          "amrap_reps": 8,
+          "amrap_weight": 270.0,
+          "calculated_1rm": 342.0
+        }
+      },
+      "WorkoutMainLiftResponse": {
+        "properties": {
+          "lift_type": {
+            "type": "string",
+            "title": "Lift Type"
+          },
+          "lift_order": {
+            "type": "integer",
+            "title": "Lift Order"
+          },
+          "current_training_max": {
+            "type": "number",
+            "title": "Current Training Max"
+          }
+        },
+        "type": "object",
+        "required": [
+          "lift_type",
+          "lift_order",
+          "current_training_max"
+        ],
+        "title": "WorkoutMainLiftResponse",
+        "description": "Response model for a main lift in a workout."
+      },
+      "WorkoutResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "program_id": {
+            "type": "string",
+            "title": "Program Id"
+          },
+          "scheduled_date": {
+            "type": "string",
+            "format": "date",
+            "title": "Scheduled Date"
+          },
+          "completed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Date"
+          },
+          "cycle_number": {
+            "type": "integer",
+            "title": "Cycle Number"
+          },
+          "week_number": {
+            "type": "integer",
+            "title": "Week Number"
+          },
+          "week_type": {
+            "type": "string",
+            "title": "Week Type"
+          },
+          "main_lifts": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutMainLiftResponse"
+            },
+            "type": "array",
+            "title": "Main Lifts"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "program_id",
+          "scheduled_date",
+          "completed_date",
+          "cycle_number",
+          "week_number",
+          "week_type",
+          "main_lifts",
+          "status",
+          "notes",
+          "created_at"
+        ],
+        "title": "WorkoutResponse",
+        "description": "Basic workout information."
+      },
+      "WorkoutSetResponse": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "set_type": {
+            "type": "string",
+            "title": "Set Type"
+          },
+          "set_number": {
+            "type": "integer",
+            "title": "Set Number"
+          },
+          "prescribed_reps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prescribed Reps"
+          },
+          "prescribed_weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prescribed Weight"
+          },
+          "percentage_of_tm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Percentage Of Tm"
+          },
+          "actual_reps": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Reps"
+          },
+          "actual_weight": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Weight"
+          },
+          "is_target_met": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Target Met"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "exercise_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exercise Id"
+          },
+          "circuit_group": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Circuit Group"
+          }
+        },
+        "type": "object",
+        "required": [
+          "set_type",
+          "set_number",
+          "prescribed_reps",
+          "prescribed_weight",
+          "percentage_of_tm"
+        ],
+        "title": "WorkoutSetResponse",
+        "description": "Response model for a workout set (prescribed or logged)."
+      },
+      "WorkoutSetsForLift": {
+        "properties": {
+          "warmup_sets": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutSetResponse"
+            },
+            "type": "array",
+            "title": "Warmup Sets"
+          },
+          "main_sets": {
+            "items": {
+              "$ref": "#/components/schemas/WorkoutSetResponse"
+            },
+            "type": "array",
+            "title": "Main Sets"
+          }
+        },
+        "type": "object",
+        "required": [
+          "warmup_sets",
+          "main_sets"
+        ],
+        "title": "WorkoutSetsForLift",
+        "description": "Sets organized by type for a specific lift."
+      }
+    },
+    "securitySchemes": {
+      "HTTPBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    }
+  }
+}
