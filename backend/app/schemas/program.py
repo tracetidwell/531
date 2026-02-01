@@ -269,3 +269,23 @@ class ProgramUpdateRequest(BaseModel):
                 "target_cycles": 4
             }
         }
+
+
+class AccessoriesUpdateRequest(BaseModel):
+    """Schema for updating accessories for a specific training day."""
+
+    accessories: List[AccessoryExerciseInput] = Field(
+        ...,
+        max_length=5,
+        description="List of accessory exercises (max 5)"
+    )
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "accessories": [
+                    {"exercise_id": "uuid-1", "sets": 3, "reps": 20},
+                    {"exercise_id": "uuid-2", "sets": 3, "reps": 10, "circuit_group": 1}
+                ]
+            }
+        }
