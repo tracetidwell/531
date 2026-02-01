@@ -67,7 +67,12 @@ class WorkoutService:
             query = query.filter(Workout.program_id == program_id)
 
         if workout_status:
-            query = query.filter(Workout.status == workout_status)
+            # Convert string to enum for comparison
+            try:
+                status_enum = WorkoutStatus(workout_status.upper())
+                query = query.filter(Workout.status == status_enum)
+            except ValueError:
+                pass  # Invalid status, ignore filter
 
         if start_date:
             query = query.filter(Workout.scheduled_date >= start_date)

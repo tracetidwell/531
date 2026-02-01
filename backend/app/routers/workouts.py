@@ -63,6 +63,31 @@ async def list_workouts(
 
 
 @router.get(
+    "/missed",
+    response_model=MissedWorkoutsResponse,
+    summary="Get missed workouts",
+    description="Get all workouts that are past their scheduled date but not completed."
+)
+async def get_missed_workouts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> MissedWorkoutsResponse:
+    """
+    Get all missed workouts for the current user.
+
+    A workout is considered "missed" if:
+    - Its status is still 'scheduled'
+    - Its scheduled_date is before today
+
+    The response includes:
+    - List of missed workouts with days overdue
+    - User's missed workout preference (skip/reschedule/ask)
+    - Whether each workout can still be rescheduled (within 14 days)
+    """
+    return WorkoutService.get_missed_workouts(db, current_user)
+
+
+@router.get(
     "/{workout_id}",
     response_model=WorkoutDetailResponse,
     status_code=status.HTTP_200_OK,
@@ -166,31 +191,6 @@ async def skip_workout(
     Note: Cannot skip a workout that is already completed or skipped.
     """
     return WorkoutService.skip_workout(db, current_user, workout_id)
-
-
-@router.get(
-    "/missed",
-    response_model=MissedWorkoutsResponse,
-    summary="Get missed workouts",
-    description="Get all workouts that are past their scheduled date but not completed."
-)
-async def get_missed_workouts(
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-) -> MissedWorkoutsResponse:
-    """
-    Get all missed workouts for the current user.
-
-    A workout is considered "missed" if:
-    - Its status is still 'scheduled'
-    - Its scheduled_date is before today
-
-    The response includes:
-    - List of missed workouts with days overdue
-    - User's missed workout preference (skip/reschedule/ask)
-    - Whether each workout can still be rescheduled (within 14 days)
-    """
-    return WorkoutService.get_missed_workouts(db, current_user)
 
 
 @router.post(
