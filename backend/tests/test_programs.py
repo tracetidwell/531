@@ -665,3 +665,67 @@ class TestProgramTemplates:
         assert len(day1["accessories"]) == 1
         assert day1["accessories"][0]["sets"] == 4
         assert day1["accessories"][0]["reps"] == 15
+
+    def test_get_day_accessories(self, client, auth_token, program_with_accessories):
+        """Test getting day accessories from the new endpoint."""
+        program_id = program_with_accessories["id"]
+
+        response = client.get(
+            f"/api/v1/programs/{program_id}/day-accessories",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should have 4 day accessories (one for each day)
+        assert len(data) == 4
+
+        # Check day 1 accessories
+        day1 = next(da for da in data if da["day_number"] == 1)
+        assert "id" in day1
+        assert len(day1["accessories"]) == 2
+        assert day1["accessories"][0]["sets"] == 5
+        assert day1["accessories"][0]["reps"] == 10
+
+        # Check day 2 accessories
+        day2 = next(da for da in data if da["day_number"] == 2)
+        assert len(day2["accessories"]) == 1
+
+    def test_get_day_accessories_not_found(self, client, auth_token):
+        """Test getting day accessories for non-existent program."""
+        fake_id = str(uuid.uuid4())
+
+        response = client.get(
+            f"/api/v1/programs/{fake_id}/day-accessories",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+
+        assert response.status_code == 404
+
+    def test_day_accessories_sync_with_templates(self, client, auth_token, program_with_accessories, test_exercises):
+        """Test that day accessories and templates return the same accessories."""
+        program_id = program_with_accessories["id"]
+
+        # Get templates
+        templates_response = client.get(
+            f"/api/v1/programs/{program_id}/templates",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        templates = templates_response.json()
+
+        # Get day accessories
+        day_accessories_response = client.get(
+            f"/api/v1/programs/{program_id}/day-accessories",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        day_accessories = day_accessories_response.json()
+
+        # Verify accessories match for each day
+        for day_acc in day_accessories:
+            day_num = day_acc["day_number"]
+            # Find templates for this day
+            day_templates = [t for t in templates if t["day_number"] == day_num]
+            # All templates for the same day should have the same accessories
+            for template in day_templates:
+                assert template["accessories"] == day_acc["accessories"]

@@ -16,7 +16,7 @@ from app.database import Base
 
 # Import all models to ensure they're registered with Base
 from app.models import (
-    User, Program, TrainingMax, TrainingMaxHistory, ProgramTemplate,
+    User, Program, TrainingMax, TrainingMaxHistory, ProgramTemplate, ProgramDayAccessories,
     Exercise, Workout, WorkoutSet, WarmupTemplate, RepMax
 )
 

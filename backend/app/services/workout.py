@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from typing import List, Optional, Dict
 from datetime import datetime, date
 from app.models.workout import Workout, WorkoutSet, WorkoutMainLift, WorkoutStatus, WeekType, SetType
-from app.models.program import Program, TrainingMax, ProgramTemplate, LiftType
+from app.models.program import Program, TrainingMax, ProgramTemplate, ProgramDayAccessories, LiftType
 from app.models.exercise import Exercise
 from app.models.rep_max import RepMax
 from app.models.user import User, WeightUnit
@@ -305,20 +305,34 @@ class WorkoutService:
         program_id: str,
         lift_type: LiftType
     ) -> List[WorkoutSetResponse]:
-        """Get prescribed accessory sets from program template for a specific lift."""
-        # Find the program template for this lift
-        # Query by both program_id and main_lift to support 2-day, 3-day, and 4-day programs
+        """Get prescribed accessory sets for a workout day.
+
+        PHASE 3: Now reads from ProgramDayAccessories table instead of ProgramTemplate.
+        First looks up the day_number from ProgramTemplate, then queries ProgramDayAccessories.
+        """
+        # First, find the day_number for this lift from ProgramTemplate
         template = db.query(ProgramTemplate).filter(
             ProgramTemplate.program_id == program_id,
             ProgramTemplate.main_lift == lift_type
         ).first()
 
-        if not template or not template.accessories:
+        if not template:
             return []
 
-        # Build accessory sets from template
+        day_number = template.day_number
+
+        # PHASE 3: Read from the new ProgramDayAccessories table
+        day_accessories = db.query(ProgramDayAccessories).filter(
+            ProgramDayAccessories.program_id == program_id,
+            ProgramDayAccessories.day_number == day_number
+        ).first()
+
+        if not day_accessories or not day_accessories.accessories:
+            return []
+
+        # Build accessory sets from the day accessories
         accessory_sets = []
-        for acc in template.accessories:
+        for acc in day_accessories.accessories:
             # Each accessory has multiple sets
             for set_num in range(1, acc["sets"] + 1):
                 accessory_sets.append(
@@ -342,7 +356,7 @@ class WorkoutService:
         current_tm: float,
         rounding_increment: float,
         warmup_sets: list,
-        program_template
+        day_accessories: list
     ) -> dict:
         """
         Calculate prescribed reps and weight based on set type.
@@ -353,7 +367,7 @@ class WorkoutService:
             current_tm: Current training max
             rounding_increment: User's rounding preference
             warmup_sets: Pre-calculated warmup sets
-            program_template: Program template for accessory info
+            day_accessories: List of accessory exercises for the day
 
         Returns:
             Dict with prescribed_reps, prescribed_weight, percentage_of_tm
@@ -399,10 +413,10 @@ class WorkoutService:
 
         # Accessory sets
         elif set_type == "accessory":
-            # Try to get prescribed reps from program template
-            if program_template and program_template.accessories:
-                # Find the accessory exercise in the template
-                for acc in program_template.accessories:
+            # Try to get prescribed reps from day accessories
+            if day_accessories:
+                # Find the accessory exercise in the day accessories
+                for acc in day_accessories:
                     if acc.get("exercise_id") == set_log.exercise_id:
                         result["prescribed_reps"] = acc.get("reps")
                         break
@@ -453,7 +467,7 @@ class WorkoutService:
         # Build training maxes lookup by lift type
         training_maxes_by_lift = {}
         warmup_sets_by_lift = {}
-        program_templates_by_lift = {}
+        day_accessories_by_lift = {}
 
         for main_lift in workout.main_lifts:
             lift_type = main_lift.lift_type
@@ -467,12 +481,21 @@ class WorkoutService:
                 user.rounding_increment
             )
 
-            # Get program template for this lift
+            # Get day_number from program template for this lift
             program_template = db.query(ProgramTemplate).filter(
                 ProgramTemplate.program_id == workout.program_id,
                 ProgramTemplate.main_lift == lift_type
             ).first()
-            program_templates_by_lift[lift_type] = program_template
+
+            # Get day accessories from ProgramDayAccessories table
+            if program_template:
+                day_accessories = db.query(ProgramDayAccessories).filter(
+                    ProgramDayAccessories.program_id == workout.program_id,
+                    ProgramDayAccessories.day_number == program_template.day_number
+                ).first()
+                day_accessories_by_lift[lift_type] = day_accessories.accessories if day_accessories else []
+            else:
+                day_accessories_by_lift[lift_type] = []
 
         # Save all sets and track AMRAP sets (one per lift)
         amrap_workout_set_ids_by_lift = {}
@@ -491,7 +514,7 @@ class WorkoutService:
 
             current_tm = training_maxes_by_lift.get(lift_type, 0)
             warmup_sets_calculated = warmup_sets_by_lift.get(lift_type, [])
-            program_template = program_templates_by_lift.get(lift_type)
+            day_accessories = day_accessories_by_lift.get(lift_type, [])
 
             # Calculate prescribed values based on set type
             prescribed_values = WorkoutService._calculate_prescribed_values(
@@ -500,7 +523,7 @@ class WorkoutService:
                 current_tm=current_tm,
                 rounding_increment=user.rounding_increment,
                 warmup_sets=warmup_sets_calculated,
-                program_template=program_template
+                day_accessories=day_accessories
             )
 
             # Calculate if target was met (actual_reps >= prescribed_reps)

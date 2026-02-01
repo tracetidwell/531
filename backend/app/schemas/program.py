@@ -289,3 +289,24 @@ class AccessoriesUpdateRequest(BaseModel):
                 ]
             }
         }
+
+
+class ProgramDayAccessoriesResponse(BaseModel):
+    """Schema for program day accessories response."""
+
+    id: str = Field(..., description="Day accessories ID")
+    day_number: int = Field(..., description="Day number (1-4)")
+    accessories: List[dict] = Field(..., description="List of accessory exercises")
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "id": "uuid-here",
+                "day_number": 1,
+                "accessories": [
+                    {"exercise_id": "uuid-1", "sets": 5, "reps": 12, "weight_type": "fixed"},
+                    {"exercise_id": "uuid-2", "sets": 5, "reps": 12, "weight_type": "fixed"}
+                ]
+            }
+        }
