@@ -6,14 +6,15 @@ from fastapi import HTTPException, status
 from typing import List, Dict
 from datetime import date, timedelta, datetime
 from app.models.program import (
-    Program, ProgramTemplate, TrainingMax, TrainingMaxHistory,
+    Program, ProgramTemplate, ProgramDayAccessories, TrainingMax, TrainingMaxHistory,
     LiftType, ProgramStatus, TrainingMaxReason
 )
 from app.models.workout import Workout, WorkoutMainLift, WeekType, WorkoutStatus
 from app.models.user import User
 from app.schemas.program import (
     ProgramCreateRequest, ProgramResponse, ProgramDetailResponse,
-    ProgramUpdateRequest, TrainingMaxResponse
+    ProgramUpdateRequest, TrainingMaxResponse, AccessoriesUpdateRequest,
+    ProgramDayAccessoriesResponse
 )
 
 
@@ -186,8 +187,8 @@ class ProgramService:
                 cycle=1
             )
 
-        # Create program templates (accessories per workout type)
-        # Workout types represent main lift combinations, not calendar days
+        # Create program templates (main lift per day) and day accessories
+        # PHASE 4: Only write accessories to ProgramDayAccessories table
         if program_data.template_type == '2_day':
             # 2-day program: 2 workout types, each with TWO main lifts
             # Workout type 1: Squat + Bench Press
@@ -213,11 +214,20 @@ class ProgramService:
                 for lift in lifts:
                     template = ProgramTemplate(
                         program_id=program.id,
-                        day_number=workout_num,  # Still use for database compatibility
-                        main_lift=lift,
-                        accessories=accessories_json  # Same accessories for both lifts
+                        day_number=workout_num,
+                        main_lift=lift
                     )
                     db.add(template)
+
+                # Write accessories to ProgramDayAccessories (single source of truth)
+                if accessories_json:
+                    day_accessories = ProgramDayAccessories(
+                        program_id=program.id,
+                        day_number=workout_num,
+                        accessories=accessories_json
+                    )
+                    db.add(day_accessories)
+
         elif program_data.template_type == '3_day':
             # 3-day program: 4 workout types (one per lift)
             # Workout types now represent individual lifts since they rotate across days
@@ -248,11 +258,20 @@ class ProgramService:
 
                 template = ProgramTemplate(
                     program_id=program.id,
-                    day_number=int(workout_key),  # Store workout type as day_number
-                    main_lift=lift,
-                    accessories=accessories_json
+                    day_number=int(workout_key),
+                    main_lift=lift
                 )
                 db.add(template)
+
+                # Write accessories to ProgramDayAccessories (single source of truth)
+                if accessories_json:
+                    day_accessories = ProgramDayAccessories(
+                        program_id=program.id,
+                        day_number=int(workout_key),
+                        accessories=accessories_json
+                    )
+                    db.add(day_accessories)
+
         else:
             # 4-day program: 4 workout types (one per lift)
             # Workout type 1: Press
@@ -278,12 +297,19 @@ class ProgramService:
 
                 template = ProgramTemplate(
                     program_id=program.id,
-                    day_number=workout_num,  # Store workout type as day_number
-                    main_lift=lift,
-                    accessories=accessories_json
+                    day_number=workout_num,
+                    main_lift=lift
                 )
-
                 db.add(template)
+
+                # Write accessories to ProgramDayAccessories (single source of truth)
+                if accessories_json:
+                    day_accessories = ProgramDayAccessories(
+                        program_id=program.id,
+                        day_number=workout_num,
+                        accessories=accessories_json
+                    )
+                    db.add(day_accessories)
 
         # Generate first cycle's workouts (4 weeks)
         workouts_created = ProgramService._generate_workouts(
@@ -616,6 +642,65 @@ class ProgramService:
         )
 
     @staticmethod
+    def get_program_templates(
+        db: Session,
+        user: User,
+        program_id: str
+    ) -> List[dict]:
+        """
+        Get all templates (training days with accessories) for a program.
+
+        PHASE 4: Now reads accessories from ProgramDayAccessories table.
+
+        Args:
+            db: Database session
+            user: Current user
+            program_id: Program ID
+
+        Returns:
+            List of template dictionaries with day_number, main_lift, and accessories
+
+        Raises:
+            HTTPException: If program not found
+        """
+        # Verify program ownership
+        program = db.query(Program).filter(
+            Program.id == program_id,
+            Program.user_id == user.id
+        ).first()
+
+        if not program:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Program not found"
+            )
+
+        # Get all templates for this program
+        templates = db.query(ProgramTemplate).filter(
+            ProgramTemplate.program_id == program_id
+        ).order_by(ProgramTemplate.day_number).all()
+
+        # Get all day accessories for this program
+        day_accessories_list = db.query(ProgramDayAccessories).filter(
+            ProgramDayAccessories.program_id == program_id
+        ).all()
+
+        # Build lookup by day_number
+        accessories_by_day = {
+            da.day_number: da.accessories or []
+            for da in day_accessories_list
+        }
+
+        return [
+            {
+                "day_number": t.day_number,
+                "main_lift": t.main_lift.value,
+                "accessories": accessories_by_day.get(t.day_number, [])
+            }
+            for t in templates
+        ]
+
+    @staticmethod
     def update_program(
         db: Session,
         user: User,
@@ -657,6 +742,95 @@ class ProgramService:
         db.refresh(program)
 
         return ProgramResponse.model_validate(program)
+
+    @staticmethod
+    def update_accessories(
+        db: Session,
+        user: User,
+        program_id: str,
+        day_number: int,
+        update_data: AccessoriesUpdateRequest
+    ) -> dict:
+        """
+        Update accessory exercises for a specific training day.
+
+        Args:
+            db: Database session
+            user: Current user
+            program_id: Program ID
+            day_number: Training day number (1-4)
+            update_data: New accessories configuration
+
+        Returns:
+            Success message with updated accessories
+
+        Raises:
+            HTTPException: If program or template not found
+        """
+        # Verify program ownership
+        program = db.query(Program).filter(
+            Program.id == program_id,
+            Program.user_id == user.id
+        ).first()
+
+        if not program:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Program not found"
+            )
+
+        # Verify the day exists by checking templates
+        templates = db.query(ProgramTemplate).filter(
+            ProgramTemplate.program_id == program_id,
+            ProgramTemplate.day_number == day_number
+        ).all()
+
+        if not templates:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No template found for day {day_number}"
+            )
+
+        # Convert accessories to JSON format
+        accessories_json = [
+            {
+                "exercise_id": acc.exercise_id,
+                "sets": acc.sets,
+                "reps": acc.reps,
+                "circuit_group": acc.circuit_group
+            }
+            for acc in update_data.accessories
+        ]
+
+        # Get the lifts for response
+        lifts_updated = [template.main_lift.value for template in templates]
+
+        # PHASE 4: Only update ProgramDayAccessories (single source of truth)
+        day_accessories = db.query(ProgramDayAccessories).filter(
+            ProgramDayAccessories.program_id == program_id,
+            ProgramDayAccessories.day_number == day_number
+        ).first()
+
+        if day_accessories:
+            # Update existing record
+            day_accessories.accessories = accessories_json
+        elif accessories_json:
+            # Create new record if accessories exist
+            day_accessories = ProgramDayAccessories(
+                program_id=program_id,
+                day_number=day_number,
+                accessories=accessories_json
+            )
+            db.add(day_accessories)
+
+        db.commit()
+
+        return {
+            "message": f"Updated accessories for day {day_number}",
+            "day_number": day_number,
+            "lifts_updated": lifts_updated,
+            "accessories": accessories_json
+        }
 
     @staticmethod
     def complete_cycle(
@@ -883,6 +1057,9 @@ class ProgramService:
         # 3. Delete program templates (references program)
         db.query(ProgramTemplate).filter(ProgramTemplate.program_id == program_id).delete()
 
+        # 3b. PHASE 2: Delete program day accessories (new table, references program)
+        db.query(ProgramDayAccessories).filter(ProgramDayAccessories.program_id == program_id).delete()
+
         # 4. Delete training maxes (references program)
         db.query(TrainingMax).filter(TrainingMax.program_id == program_id).delete()
 
@@ -892,3 +1069,51 @@ class ProgramService:
         # 6. Finally, delete the program itself
         db.delete(program)
         db.commit()
+
+    @staticmethod
+    def get_program_day_accessories(
+        db: Session,
+        user: User,
+        program_id: str
+    ) -> List[ProgramDayAccessoriesResponse]:
+        """
+        Get all day accessories for a program from the new ProgramDayAccessories table.
+
+        PHASE 3: New endpoint to read from the deduplicated accessories table.
+
+        Args:
+            db: Database session
+            user: Current user
+            program_id: Program ID
+
+        Returns:
+            List of ProgramDayAccessoriesResponse
+
+        Raises:
+            HTTPException: If program not found
+        """
+        # Verify program ownership
+        program = db.query(Program).filter(
+            Program.id == program_id,
+            Program.user_id == user.id
+        ).first()
+
+        if not program:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Program not found"
+            )
+
+        # Get all day accessories for this program
+        day_accessories = db.query(ProgramDayAccessories).filter(
+            ProgramDayAccessories.program_id == program_id
+        ).order_by(ProgramDayAccessories.day_number).all()
+
+        return [
+            ProgramDayAccessoriesResponse(
+                id=da.id,
+                day_number=da.day_number,
+                accessories=da.accessories or []
+            )
+            for da in day_accessories
+        ]

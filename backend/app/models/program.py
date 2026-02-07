@@ -4,7 +4,7 @@ Program and training max models.
 import uuid
 import enum
 from datetime import datetime, date
-from sqlalchemy import Column, String, Integer, Float, Date, DateTime, ForeignKey, Text, JSON, Enum as SQLEnum
+from sqlalchemy import Column, String, Integer, Float, Date, DateTime, ForeignKey, Text, JSON, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -99,7 +99,7 @@ class TrainingMaxHistory(Base):
 
 
 class ProgramTemplate(Base):
-    """Program template storing accessories per day."""
+    """Program template storing main lift per day."""
 
     __tablename__ = "program_templates"
 
@@ -108,7 +108,25 @@ class ProgramTemplate(Base):
 
     day_number = Column(Integer, nullable=False)  # 1-4 for 4-day program
     main_lift = Column(SQLEnum(LiftType, name='lifttype', create_type=False), nullable=False)
-    accessories = Column(JSON, nullable=False)  # [{"exercise_id": "uuid", "sets": 5, "reps": 12}, ...]
+    # PHASE 4: accessories column removed - use ProgramDayAccessories table instead
 
     def __repr__(self):
         return f"<ProgramTemplate Day {self.day_number}: {self.main_lift}>"
+
+
+class ProgramDayAccessories(Base):
+    """Accessories for a program day (single source of truth, not per-lift)."""
+
+    __tablename__ = "program_day_accessories"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    program_id = Column(String(36), ForeignKey("programs.id"), nullable=False, index=True)
+    day_number = Column(Integer, nullable=False)  # 1-4
+    accessories = Column(JSON, nullable=False)  # [{"exercise_id": "uuid", "sets": 5, "reps": 12, "weight_type": "fixed"}, ...]
+
+    __table_args__ = (
+        UniqueConstraint('program_id', 'day_number', name='uq_program_day_accessories'),
+    )
+
+    def __repr__(self):
+        return f"<ProgramDayAccessories Program {self.program_id} Day {self.day_number}>"

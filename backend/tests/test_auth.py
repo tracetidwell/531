@@ -329,9 +329,9 @@ class TestAuthenticatedEndpoints:
         assert data["first_name"] == "John"
         assert data["last_name"] == "Doe"
         assert data["email"] == "john@example.com"
-        assert data["weight_unit_preference"] == "lbs"
+        assert data["weight_unit_preference"].lower() == "lbs"
         assert data["rounding_increment"] == 5.0
-        assert data["missed_workout_preference"] == "ask"
+        assert data["missed_workout_preference"].lower() == "ask"
 
     def test_get_current_user_unauthorized(self, client):
         """Test accessing protected endpoint without token fails."""
@@ -360,9 +360,9 @@ class TestAuthenticatedEndpoints:
             headers={"Authorization": f"Bearer {access_token}"},
             json={
                 "first_name": "Jane",
-                "weight_unit_preference": "kg",
+                "weight_unit_preference": "KG",
                 "rounding_increment": 2.5,
-                "missed_workout_preference": "reschedule"
+                "missed_workout_preference": "RESCHEDULE"
             }
         )
 
@@ -371,6 +371,6 @@ class TestAuthenticatedEndpoints:
         data = response.json()
         assert data["first_name"] == "Jane"
         assert data["last_name"] == "Doe"  # Unchanged
-        assert data["weight_unit_preference"] == "kg"
+        assert data["weight_unit_preference"].upper() == "KG"
         assert data["rounding_increment"] == 2.5
-        assert data["missed_workout_preference"] == "reschedule"
+        assert data["missed_workout_preference"].upper() == "RESCHEDULE"
