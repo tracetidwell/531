@@ -11,6 +11,12 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      DATABASE_URL: sqlite:///./test.db
+      JWT_SECRET_KEY: ci-test-secret-key
+      SMTP_HOST: localhost
+      SMTP_USER: test@example.com
+      SMTP_PASSWORD: test
     steps:
       - uses: actions/checkout@v4
 
