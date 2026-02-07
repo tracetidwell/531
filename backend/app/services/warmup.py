@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from app.models.warmup import WarmupTemplate
 from app.models.user import User
 from app.models.program import LiftType
-from app.schemas.warmup import WarmupTemplateResponse, WarmupTemplateCreateRequest, WarmupSet
+from app.schemas.warmup import WarmupTemplateResponse, WarmupTemplateCreateRequest
 
 
 class WarmupService:
@@ -67,7 +67,7 @@ class WarmupService:
             existing_default = db.query(WarmupTemplate).filter(
                 WarmupTemplate.user_id == user.id,
                 WarmupTemplate.lift_type == template_data.lift_type,
-                WarmupTemplate.is_default == True
+                WarmupTemplate.is_default == True # noqa: E712
             ).first()
 
             if existing_default:
@@ -195,7 +195,7 @@ class WarmupService:
             existing_default = db.query(WarmupTemplate).filter(
                 WarmupTemplate.user_id == user.id,
                 WarmupTemplate.lift_type == template_data.lift_type,
-                WarmupTemplate.is_default == True,
+                WarmupTemplate.is_default == True, # noqa: E712
                 WarmupTemplate.id != template_id  # Don't include current template
             ).first()
 

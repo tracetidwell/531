@@ -3,9 +3,8 @@ Program and training max models.
 """
 import uuid
 import enum
-from datetime import datetime, date
+from datetime import datetime
 from sqlalchemy import Column, String, Integer, Float, Date, DateTime, ForeignKey, Text, JSON, Enum as SQLEnum, UniqueConstraint
-from sqlalchemy.orm import relationship
 from app.database import Base
 
 

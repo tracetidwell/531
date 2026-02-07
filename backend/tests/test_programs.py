@@ -5,8 +5,7 @@ import pytest
 from datetime import date, timedelta
 from app.models.user import User
 from app.models.exercise import Exercise, ExerciseCategory
-from app.models.program import Program, ProgramStatus, LiftType
-from app.models.workout import Workout
+from app.models.program import Program, ProgramStatus
 from app.utils.security import get_password_hash
 import uuid
 

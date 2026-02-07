@@ -6,14 +6,13 @@ from fastapi import HTTPException, status
 from typing import List, Optional, Dict
 from datetime import datetime, date
 from app.models.workout import Workout, WorkoutSet, WorkoutMainLift, WorkoutStatus, WeekType, SetType
-from app.models.program import Program, TrainingMax, ProgramTemplate, ProgramDayAccessories, LiftType
-from app.models.exercise import Exercise
+from app.models.program import Program, ProgramTemplate, ProgramDayAccessories, LiftType
 from app.models.rep_max import RepMax
 from app.models.user import User, WeightUnit
 from datetime import timedelta
 from app.schemas.workout import (
     WorkoutResponse, WorkoutDetailResponse, WorkoutSetResponse,
-    WorkoutCompleteRequest, SetLogRequest, WorkoutMainLiftResponse,
+    WorkoutCompleteRequest, WorkoutMainLiftResponse,
     WorkoutSetsForLift, WorkoutCompletionResponse, WorkoutAnalysis,
     LiftAnalysis, FailedSetInfo, MissedWorkoutInfo, MissedWorkoutsResponse,
     HandleMissedWorkoutRequest, HandleMissedWorkoutResponse,
@@ -1029,7 +1028,7 @@ class WorkoutService:
         failed_sets = db.query(WorkoutSet).filter(
             WorkoutSet.workout_id.in_(workout_ids),
             WorkoutSet.set_type.in_([SetType.WORKING, SetType.AMRAP]),
-            WorkoutSet.is_target_met == False
+            WorkoutSet.is_target_met == False # noqa: E712
         ).all()
 
         if not failed_sets:
