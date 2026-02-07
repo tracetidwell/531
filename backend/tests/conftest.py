@@ -14,8 +14,7 @@ from app.main import app
 
 # Import all models to ensure they're registered with Base
 from app.models import (
-    User, Program, TrainingMax, TrainingMaxHistory, ProgramTemplate, ProgramDayAccessories,
-    Exercise, Workout, WorkoutSet, WarmupTemplate, RepMax, WorkoutMainLift
+    User, Program, TrainingMax, Exercise, Workout, WorkoutSet, RepMax, WorkoutMainLift
 )
 from app.models.program import LiftType, ProgramStatus, TrainingMaxReason
 from app.models.workout import WorkoutStatus, WeekType, SetType, WeightUnit

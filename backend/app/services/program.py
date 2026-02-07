@@ -3,7 +3,7 @@ Program service with business logic.
 """
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from typing import List, Dict
+from typing import List
 from datetime import date, timedelta, datetime
 from app.models.program import (
     Program, ProgramTemplate, ProgramDayAccessories, TrainingMax, TrainingMaxHistory,
@@ -464,9 +464,6 @@ class ProgramService:
         for week_num in range(1, 6):
             # Get the lifts scheduled for this week from the predefined schedule
             week_lifts = ProgramService.THREE_DAY_LIFT_SCHEDULE[week_num]
-
-            # Build a mapping of lift_type -> week_type for this week
-            lift_week_types = {lift_type: week_type for lift_type, week_type in week_lifts}
 
             # Create workouts for each training day this week
             for day_offset in range(7):
@@ -998,7 +995,6 @@ class ProgramService:
 
         # Calculate start date for next cycle
         # Cycles are 3 or 4 weeks depending on include_deload
-        weeks_in_cycle = 3 if not program.include_deload else 4
         start_date = latest_workout.scheduled_date + timedelta(days=7)
 
         # Generate workouts for next cycle (3 or 4 weeks)

@@ -1,7 +1,6 @@
 """
 Tests for workout listing, detail, and skip endpoints.
 """
-import pytest
 from datetime import date, timedelta
 
 
@@ -112,8 +111,8 @@ class TestWorkoutListing:
         self, client, auth_headers, scheduled_workout, second_user, db
     ):
         """Test that other user's workouts are not visible."""
-        from app.models import Program, Workout, WorkoutMainLift
-        from app.models.program import LiftType, ProgramStatus
+        from app.models import Program, Workout
+        from app.models.program import ProgramStatus
         from app.models.workout import WorkoutStatus, WeekType
         import uuid
 

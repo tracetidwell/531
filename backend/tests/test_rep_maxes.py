@@ -1,7 +1,6 @@
 """
 Tests for rep max (personal records) endpoints.
 """
-import pytest
 from datetime import date, timedelta
 
 

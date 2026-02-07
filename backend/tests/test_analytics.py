@@ -1,8 +1,7 @@
 """
 Tests for analytics endpoints.
 """
-import pytest
-from datetime import date, timedelta
+from datetime import date
 
 
 class TestTrainingMaxProgression:

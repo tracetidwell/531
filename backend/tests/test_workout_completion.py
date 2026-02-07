@@ -1,10 +1,7 @@
 """
 Tests for workout completion, AMRAP detection, PR creation, and analysis.
 """
-import pytest
-from datetime import date
 from app.models.program import LiftType
-from app.models.workout import SetType
 
 
 class TestWorkoutCompletion:
@@ -186,7 +183,7 @@ class TestAMRAPDetection:
     """Tests for AMRAP set detection and rep max creation."""
 
     def test_amrap_detection_week_1(
-        self, client, auth_headers, scheduled_workout, db
+        self, client, auth_headers, scheduled_workout, db, test_user
     ):
         """Test AMRAP detection on week 1 (5+ reps minimum)."""
         sets_data = [
@@ -205,11 +202,12 @@ class TestAMRAPDetection:
         # Check that rep max was created
         from app.models import RepMax
         rep_max = db.query(RepMax).filter(
+            RepMax.user_id == test_user.id,
             RepMax.lift_type == LiftType.SQUAT,
             RepMax.reps == 10
         ).first()
-        # May or may not create PR depending on existing records
-        # Just verify the endpoint succeeded
+        assert rep_max is not None
+        assert rep_max.weight == 215.0
 
     def test_amrap_detection_deload_week_no_pr(
         self, client, auth_headers, scheduled_workout_deload, db

@@ -3,7 +3,6 @@ Analytics-related Pydantic schemas.
 """
 from pydantic import BaseModel, Field
 from typing import Dict, List, Optional
-from datetime import date as date_type
 from app.models.program import LiftType
 from app.models.workout import WeekType
 
