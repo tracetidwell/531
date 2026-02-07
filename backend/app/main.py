@@ -4,7 +4,6 @@ Main FastAPI application.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.database import Base
 
 # Initialize FastAPI app
 # Note: Database tables are created via Alembic migrations, not here
@@ -45,7 +44,7 @@ async def health_check():
 
 
 # Import routers
-from app.routers import auth, users, programs, exercises, workouts, rep_maxes, warmup_templates, analytics
+from app.routers import auth, users, programs, exercises, workouts, rep_maxes, warmup_templates, analytics # noqa: E402
 
 # Include routers
 app.include_router(

@@ -2,7 +2,7 @@
 Rep max (personal records) model.
 """
 import uuid
-from datetime import datetime, date
+from datetime import datetime
 from sqlalchemy import Column, String, Integer, Float, Date, DateTime, ForeignKey, Enum as SQLEnum
 from app.database import Base
 from app.models.program import LiftType

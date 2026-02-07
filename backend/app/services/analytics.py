@@ -2,7 +2,7 @@
 Analytics service for training data insights.
 """
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import and_, desc
+from sqlalchemy import desc
 from typing import Dict, List, Optional
 from collections import defaultdict
 from fastapi import HTTPException, status

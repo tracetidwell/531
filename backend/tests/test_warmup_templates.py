@@ -1,8 +1,6 @@
 """
 Tests for warmup template CRUD endpoints.
 """
-import pytest
-import uuid
 
 
 class TestListWarmupTemplates:

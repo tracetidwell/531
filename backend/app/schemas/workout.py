@@ -4,7 +4,7 @@ Workout schemas for API requests and responses.
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict
 from datetime import date, datetime
-from app.models.workout import WeekType, WorkoutStatus, SetType
+from app.models.workout import WorkoutStatus
 from app.models.program import LiftType
 
 

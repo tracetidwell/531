@@ -3,7 +3,7 @@ Rep max service with business logic.
 """
 from sqlalchemy.orm import Session
 from sqlalchemy import and_
-from typing import Dict, Optional
+from typing import Dict
 from app.models.rep_max import RepMax
 from app.models.program import LiftType
 from app.models.user import User

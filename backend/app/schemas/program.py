@@ -4,7 +4,7 @@ Program-related Pydantic schemas.
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Dict, List
 from datetime import date, datetime
-from app.models.program import ProgramStatus, LiftType
+from app.models.program import ProgramStatus
 
 
 class TrainingMaxInput(BaseModel):

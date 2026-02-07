@@ -31,7 +31,7 @@ class ExerciseService:
             List of ExerciseResponse
         """
         query = db.query(Exercise).filter(
-            (Exercise.is_predefined == True) | (Exercise.user_id == user.id)
+            (Exercise.is_predefined == True) | (Exercise.user_id == user.id) # noqa: E712
         )
 
         if category:
