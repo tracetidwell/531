@@ -30,6 +30,9 @@ dependencies:
   # Charts
   fl_chart: ^0.65.0
 
+  # Audio
+  audioplayers: ^5.2.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -39,3 +42,6 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/audio/
