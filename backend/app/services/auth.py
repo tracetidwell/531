@@ -3,7 +3,6 @@ Authentication service with business logic.
 """
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from typing import Optional
 from app.models.user import User
 from app.schemas.auth import UserRegisterRequest, UserLoginRequest, TokenResponse
 from app.utils.security import (

@@ -1,7 +1,7 @@
 """
 User-related Pydantic schemas.
 """
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 from app.models.user import WeightUnit, MissedWorkoutPreference
