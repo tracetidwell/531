@@ -67,7 +67,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final authResponse = await _apiService.register(RegisterRequest(
+      await _apiService.register(RegisterRequest(
         firstName: firstName,
         lastName: lastName,
         email: email,
@@ -100,7 +100,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
 
     try {
-      final authResponse = await _apiService.login(LoginRequest(
+      await _apiService.login(LoginRequest(
         email: email,
         password: password,
       ));
