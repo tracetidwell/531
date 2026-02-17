@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../models/workout_models.dart';
 import '../../models/exercise_models.dart';
 import '../../models/workout_analysis_models.dart';
-import '../../services/api_service.dart';
 import '../../services/workout_session_service.dart';
 import '../../services/audio_service.dart';
 import '../../providers/program_provider.dart';
@@ -46,7 +45,6 @@ class _WorkoutLoggingScreenState extends ConsumerState<WorkoutLoggingScreen>
   final _weightController = TextEditingController();
 
   // Session restoration
-  bool _restoredFromSession = false;
 
   // Audio service for timer beep
   final _audioService = AudioService();
@@ -197,7 +195,6 @@ class _WorkoutLoggingScreenState extends ConsumerState<WorkoutLoggingScreen>
         _currentSetIndex = session.currentSetIndex;
         _loggedSets.clear();
         _loggedSets.addAll(session.loggedSets);
-        _restoredFromSession = true;
       });
 
       // Show confirmation

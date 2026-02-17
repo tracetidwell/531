@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../models/program_models.dart';
 import '../../models/workout_models.dart';
 import '../../models/analytics_models.dart';
-import '../../services/api_service.dart';
 import '../../providers/program_provider.dart';
 import '../../widgets/training_max_chart.dart';
 

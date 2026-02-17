@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../models/program_models.dart';
 import '../../models/exercise_models.dart';
-import '../../services/api_service.dart';
 import '../../providers/program_provider.dart';
 import '../../providers/exercise_provider.dart';
 
