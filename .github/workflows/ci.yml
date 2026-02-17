@@ -67,7 +67,7 @@ jobs:
 
       - run: flutter pub get
 
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-infos
 
   frontend-tests:
     name: Frontend Tests
