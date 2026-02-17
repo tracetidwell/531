@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../models/program_models.dart';
 import '../../models/exercise_models.dart';
 import '../../providers/program_provider.dart';
-import '../../providers/exercise_provider.dart';
 import '../../widgets/exercise_selector.dart';
 
 class CreateProgramScreen extends ConsumerStatefulWidget {

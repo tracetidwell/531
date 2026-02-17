@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/auth_models.dart';
-import '../../services/api_service.dart';
 import '../../providers/auth_provider.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -22,9 +21,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   double _roundingIncrement = 5.0;
   String _missedWorkoutPreference = 'ASK';
 
-  bool _isLoading = false;
   bool _isSaving = false;
-  String? _error;
 
   @override
   void initState() {
@@ -52,7 +49,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     setState(() {
       _isSaving = true;
-      _error = null;
     });
 
     try {
@@ -86,7 +82,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         missedWorkoutPreference: _missedWorkoutPreference,
       );
 
-      final updatedUser = await apiService.updateUser(request);
+      await apiService.updateUser(request);
 
       // Update auth provider with new user data
       await ref.read(authProvider.notifier).refreshUser();
@@ -105,7 +101,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       });
     } catch (e) {
       setState(() {
-        _error = e.toString();
         _isSaving = false;
       });
 
