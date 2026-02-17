@@ -381,7 +381,7 @@ class _WorkoutLoggingScreenState extends ConsumerState<WorkoutLoggingScreen>
       'actual_weight': weight,
       'weight_unit': 'lbs',
       'prescribed_reps': currentSet.prescribedReps,
-      'prescribed_weight': isAccessory ? null : currentSet.prescribedWeight,
+      'prescribed_weight': currentSet.prescribedWeight,
     });
 
     // Check if target was met (for working sets only, not warmup or accessory)
@@ -419,6 +419,11 @@ class _WorkoutLoggingScreenState extends ConsumerState<WorkoutLoggingScreen>
     if (_currentSetIndex < _allSets.length - 1) {
       setState(() {
         _currentSetIndex++;
+        // Pre-fill weight for accessories with prescribed weight
+        final nextSet = _allSets[_currentSetIndex];
+        if (nextSet.setType == 'accessory' && nextSet.prescribedWeight != null) {
+          _weightController.text = nextSet.prescribedWeight!.toInt().toString();
+        }
       });
 
       // Start rest timer based on set type
@@ -561,6 +566,11 @@ class _WorkoutLoggingScreenState extends ConsumerState<WorkoutLoggingScreen>
         _currentSetIndex = nextDifferentIndex!;
         _repsController.clear();
         _weightController.clear();
+        // Pre-fill weight for accessories with prescribed weight
+        final nextSet = _allSets[_currentSetIndex];
+        if (nextSet.setType == 'accessory' && nextSet.prescribedWeight != null) {
+          _weightController.text = nextSet.prescribedWeight!.toInt().toString();
+        }
         // No rest timer - jump directly
       });
       // Save session after ending exercise
@@ -1190,7 +1200,9 @@ class _WorkoutLoggingScreenState extends ConsumerState<WorkoutLoggingScreen>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Weight: Your choice (0 for bodyweight)',
+                  currentSet.prescribedWeight != null
+                      ? 'Weight: ${currentSet.prescribedWeight!.toInt()} lbs'
+                      : 'Weight: Your choice (0 for bodyweight)',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey[600],
                       ),

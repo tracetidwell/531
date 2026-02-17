@@ -71,30 +71,6 @@ async def list_programs(
 
 
 @router.get(
-    "/{program_id}",
-    response_model=ProgramDetailResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Get program details",
-    description="Get detailed information about a specific program."
-)
-async def get_program(
-    program_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-) -> ProgramDetailResponse:
-    """
-    Get detailed program information.
-
-    Returns:
-    - Program details (name, dates, status)
-    - Current training maxes for all lifts
-    - Current cycle and week
-    - Number of workouts generated
-    """
-    return ProgramService.get_program_detail(db, current_user, program_id)
-
-
-@router.get(
     "/{program_id}/templates",
     response_model=List[dict],
     status_code=status.HTTP_200_OK,
@@ -142,6 +118,30 @@ async def get_program_day_accessories(
     - accessories: List of accessory exercises
     """
     return ProgramService.get_program_day_accessories(db, current_user, program_id)
+
+
+@router.get(
+    "/{program_id}",
+    response_model=ProgramDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get program details",
+    description="Get detailed information about a specific program."
+)
+async def get_program(
+    program_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> ProgramDetailResponse:
+    """
+    Get detailed program information.
+
+    Returns:
+    - Program details (name, dates, status)
+    - Current training maxes for all lifts
+    - Current cycle and week
+    - Number of workouts generated
+    """
+    return ProgramService.get_program_detail(db, current_user, program_id)
 
 
 @router.put(

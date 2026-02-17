@@ -121,7 +121,7 @@ class ProgramDayAccessories(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     program_id = Column(String(36), ForeignKey("programs.id"), nullable=False, index=True)
     day_number = Column(Integer, nullable=False)  # 1-4
-    accessories = Column(JSON, nullable=False)  # [{"exercise_id": "uuid", "sets": 5, "reps": 12, "weight_type": "fixed"}, ...]
+    accessories = Column(JSON, nullable=False)  # [{"exercise_id": "uuid", "sets": 5, "reps": 12, "weight_type": "fixed", "weight": 135.0}, ...]
 
     __table_args__ = (
         UniqueConstraint('program_id', 'day_number', name='uq_program_day_accessories'),

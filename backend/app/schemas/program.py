@@ -37,6 +37,11 @@ class AccessoryExerciseInput(BaseModel):
         ge=1,
         description="Circuit group number (exercises with same number are done as a circuit). None = standalone exercise."
     )
+    weight: Optional[float] = Field(
+        default=None,
+        ge=0,
+        description="Prescribed weight for the exercise"
+    )
 
     class Config:
         json_schema_extra = {
@@ -44,7 +49,8 @@ class AccessoryExerciseInput(BaseModel):
                 "exercise_id": "uuid-here",
                 "sets": 5,
                 "reps": 12,
-                "circuit_group": 1
+                "circuit_group": 1,
+                "weight": 135.0
             }
         }
 

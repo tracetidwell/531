@@ -904,6 +904,7 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
   }) {
     final setCount = sets.length;
     final prescribedReps = sets.first.prescribedReps ?? 0;
+    final prescribedWeight = sets.first.prescribedWeight;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -981,7 +982,9 @@ class _WorkoutDetailScreenState extends ConsumerState<WorkoutDetailScreen> {
                     Icon(Icons.fitness_center, size: 14, color: color.shade700),
                     const SizedBox(width: 6),
                     Text(
-                      '$setCount sets × $prescribedReps reps',
+                      prescribedWeight != null
+                          ? '$setCount sets × $prescribedReps reps @ ${prescribedWeight.toInt()} lbs'
+                          : '$setCount sets × $prescribedReps reps',
                       style: TextStyle(
                         fontSize: 13,
                         color: color.shade800,
