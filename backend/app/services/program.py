@@ -205,7 +205,8 @@ class ProgramService:
                         "sets": acc.sets,
                         "reps": acc.reps,
                         "weight_type": "fixed",
-                        "circuit_group": acc.circuit_group
+                        "circuit_group": acc.circuit_group,
+                        "weight": acc.weight
                     }
                     for acc in accessories_data
                 ]
@@ -251,7 +252,8 @@ class ProgramService:
                         "sets": acc.sets,
                         "reps": acc.reps,
                         "weight_type": "fixed",
-                        "circuit_group": acc.circuit_group
+                        "circuit_group": acc.circuit_group,
+                        "weight": acc.weight
                     }
                     for acc in accessories_data
                 ]
@@ -290,7 +292,8 @@ class ProgramService:
                         "sets": acc.sets,
                         "reps": acc.reps,
                         "weight_type": "fixed",
-                        "circuit_group": acc.circuit_group
+                        "circuit_group": acc.circuit_group,
+                        "weight": acc.weight
                     }
                     for acc in accessories_data
                 ]
@@ -794,7 +797,8 @@ class ProgramService:
                 "exercise_id": acc.exercise_id,
                 "sets": acc.sets,
                 "reps": acc.reps,
-                "circuit_group": acc.circuit_group
+                "circuit_group": acc.circuit_group,
+                "weight": acc.weight
             }
             for acc in update_data.accessories
         ]

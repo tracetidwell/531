@@ -702,6 +702,105 @@ class TestProgramTemplates:
 
         assert response.status_code == 404
 
+    def test_create_program_with_weight(self, client, auth_token, test_exercises):
+        """Test creating a program with weight values on accessories."""
+        start_date = date.today()
+
+        program_data = {
+            "name": "Program With Weights",
+            "template_type": "4_day",
+            "start_date": start_date.isoformat(),
+            "training_days": ["monday", "tuesday", "thursday", "friday"],
+            "training_maxes": {
+                "press": 100,
+                "deadlift": 300,
+                "bench_press": 200,
+                "squat": 250
+            },
+            "accessories": {
+                "1": [
+                    {"exercise_id": test_exercises["push"], "sets": 5, "reps": 10, "weight": 135.0},
+                    {"exercise_id": test_exercises["core"], "sets": 3, "reps": 15}
+                ],
+                "2": [
+                    {"exercise_id": test_exercises["pull"], "sets": 4, "reps": 12, "weight": 100.0}
+                ],
+                "3": [
+                    {"exercise_id": test_exercises["push"], "sets": 5, "reps": 10, "weight": 95.0}
+                ],
+                "4": [
+                    {"exercise_id": test_exercises["legs"], "sets": 3, "reps": 12}
+                ]
+            }
+        }
+
+        response = client.post(
+            "/api/v1/programs",
+            json=program_data,
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+
+        assert response.status_code == 201
+        program_id = response.json()["id"]
+
+        # Verify weight is stored in templates
+        templates_response = client.get(
+            f"/api/v1/programs/{program_id}/templates",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        assert templates_response.status_code == 200
+        templates = templates_response.json()
+
+        day1 = next(t for t in templates if t["day_number"] == 1)
+        assert day1["accessories"][0]["weight"] == 135.0
+        assert day1["accessories"][1]["weight"] is None  # No weight specified
+
+        day2 = next(t for t in templates if t["day_number"] == 2)
+        assert day2["accessories"][0]["weight"] == 100.0
+
+        # Verify weight is stored in day-accessories
+        day_acc_response = client.get(
+            f"/api/v1/programs/{program_id}/day-accessories",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        assert day_acc_response.status_code == 200
+        day_accessories = day_acc_response.json()
+
+        da1 = next(da for da in day_accessories if da["day_number"] == 1)
+        assert da1["accessories"][0]["weight"] == 135.0
+        assert da1["accessories"][1]["weight"] is None
+
+    def test_update_accessories_with_weight(self, client, auth_token, program_with_accessories, test_exercises):
+        """Test updating accessories with weight values."""
+        program_id = program_with_accessories["id"]
+
+        new_accessories = [
+            {"exercise_id": test_exercises["push"], "sets": 5, "reps": 10, "weight": 150.0},
+            {"exercise_id": test_exercises["core"], "sets": 3, "reps": 15, "weight": 25.0}
+        ]
+
+        response = client.put(
+            f"/api/v1/programs/{program_id}/days/1/accessories",
+            json={"accessories": new_accessories},
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["accessories"][0]["weight"] == 150.0
+        assert data["accessories"][1]["weight"] == 25.0
+
+        # Verify it persists via templates endpoint
+        templates_response = client.get(
+            f"/api/v1/programs/{program_id}/templates",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        templates = templates_response.json()
+        day1 = next(t for t in templates if t["day_number"] == 1)
+        assert day1["accessories"][0]["weight"] == 150.0
+        assert day1["accessories"][1]["weight"] == 25.0
+
     def test_day_accessories_sync_with_templates(self, client, auth_token, program_with_accessories, test_exercises):
         """Test that day accessories and templates return the same accessories."""
         program_id = program_with_accessories["id"]
