@@ -3,7 +3,7 @@ Program service with business logic.
 """
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from typing import List
+from typing import List, Optional
 from datetime import date, timedelta, datetime
 from app.models.program import (
     Program, ProgramTemplate, ProgramDayAccessories, TrainingMax, TrainingMaxHistory,
@@ -735,6 +735,20 @@ class ProgramService:
 
         # Update only provided fields
         update_dict = update_data.model_dump(exclude_unset=True)
+
+        # Handle include_deload separately: store as int and delete deload workouts if disabling
+        if 'include_deload' in update_dict:
+            new_include_deload = update_dict.pop('include_deload')
+            program.include_deload = 1 if new_include_deload else 0
+
+            if not new_include_deload:
+                # Delete all scheduled deload workouts for this program
+                db.query(Workout).filter(
+                    Workout.program_id == program.id,
+                    Workout.week_type == WeekType.WEEK_4_DELOAD,
+                    Workout.status == WorkoutStatus.SCHEDULED
+                ).delete()
+
         for field, value in update_dict.items():
             setattr(program, field, value)
 
@@ -837,7 +851,8 @@ class ProgramService:
     def complete_cycle(
         db: Session,
         user: User,
-        program_id: str
+        program_id: str,
+        increments: Optional[dict] = None
     ) -> dict:
         """
         Complete current cycle and increase training maxes.
@@ -889,18 +904,19 @@ class ProgramService:
         # Determine next cycle number
         next_cycle = max(tm.cycle_number for tm in current_tms) + 1
 
-        # Standard progression increments per 5/3/1
-        increments = {
-            LiftType.PRESS: 5.0,          # Upper body: +5 lbs
-            LiftType.BENCH_PRESS: 5.0,    # Upper body: +5 lbs
-            LiftType.SQUAT: 10.0,         # Lower body: +10 lbs
-            LiftType.DEADLIFT: 10.0       # Lower body: +10 lbs
+        # Use provided increments or fall back to standard 5/3/1 progression
+        raw_increments = increments or {}
+        increments_by_lift = {
+            LiftType.PRESS: raw_increments.get('press', 5.0),
+            LiftType.BENCH_PRESS: raw_increments.get('bench_press', 5.0),
+            LiftType.SQUAT: raw_increments.get('squat', 10.0),
+            LiftType.DEADLIFT: raw_increments.get('deadlift', 10.0),
         }
 
         # Create new training maxes with increases
         new_tms = {}
         for lift_type, old_tm in latest_tms.items():
-            increment = increments[lift_type]
+            increment = increments_by_lift[lift_type]
             new_value = old_tm.value + increment
 
             # Create new training max record
@@ -972,10 +988,10 @@ class ProgramService:
                 detail="Program not found"
             )
 
-        # Get latest cycle number
+        # Get the last workout of the current cycle by date
         latest_workout = db.query(Workout).filter(
             Workout.program_id == program.id
-        ).order_by(Workout.cycle_number.desc()).first()
+        ).order_by(Workout.cycle_number.desc(), Workout.scheduled_date.desc()).first()
 
         if not latest_workout:
             raise HTTPException(

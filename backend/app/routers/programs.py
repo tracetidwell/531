@@ -1,7 +1,7 @@
 """
 Program management API endpoints.
 """
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -11,7 +11,8 @@ from app.schemas.program import (
     ProgramDetailResponse,
     ProgramUpdateRequest,
     AccessoriesUpdateRequest,
-    ProgramDayAccessoriesResponse
+    ProgramDayAccessoriesResponse,
+    CompleteCycleRequest,
 )
 from app.services.program import ProgramService
 from app.models.user import User
@@ -201,6 +202,7 @@ async def update_accessories(
 )
 async def complete_cycle(
     program_id: str,
+    request: CompleteCycleRequest = Body(default_factory=CompleteCycleRequest),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
@@ -210,6 +212,8 @@ async def complete_cycle(
     Per Jim Wendler's 5/3/1 methodology:
     - Upper body lifts (Press, Bench Press): +5 lbs
     - Lower body lifts (Squat, Deadlift): +10 lbs
+
+    Optionally supply custom increments in the request body to override defaults.
 
     This endpoint:
     - Creates new TrainingMax records for the next cycle
@@ -235,7 +239,13 @@ async def complete_cycle(
     }
     ```
     """
-    return ProgramService.complete_cycle(db, current_user, program_id)
+    increments = {
+        'press': request.press_increment,
+        'bench_press': request.bench_press_increment,
+        'squat': request.squat_increment,
+        'deadlift': request.deadlift_increment,
+    }
+    return ProgramService.complete_cycle(db, current_user, program_id, increments)
 
 
 @router.post(

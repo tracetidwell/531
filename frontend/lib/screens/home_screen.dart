@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
 import '../models/missed_workout_models.dart';
+import 'max_calculator_sheet.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -212,6 +213,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         color: Colors.teal,
                         onTap: () {
                           context.push('/progress');
+                        },
+                      ),
+                      _QuickActionCard(
+                        icon: Icons.calculate_outlined,
+                        title: 'Max Calculator',
+                        subtitle: 'Estimate your 1RM',
+                        color: Colors.red,
+                        onTap: () {
+                          showMaxCalculatorSheet(
+                            context,
+                            user.weightUnitPreference,
+                          );
                         },
                       ),
                     ],

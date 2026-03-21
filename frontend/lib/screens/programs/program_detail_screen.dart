@@ -27,6 +27,7 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
   bool _isLoading = true;
   String? _error;
   bool _isSaving = false;
+  bool _cycleReadyForAdvance = false;
 
   @override
   void initState() {
@@ -53,10 +54,26 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
         exerciseMap[e.id] = e;
       }
 
+      // Check if all workouts for the current cycle are done
+      bool cycleReady = false;
+      if (detail.status == 'ACTIVE') {
+        try {
+          final scheduledThisCycle = await apiService.getWorkouts(
+            programId: widget.programId,
+            status: 'scheduled',
+            cycleNumber: detail.currentCycle,
+          );
+          cycleReady = scheduledThisCycle.isEmpty;
+        } catch (_) {
+          // Non-fatal; leave cycleReady as false
+        }
+      }
+
       setState(() {
         _programDetail = detail;
         _templates = templates;
         _exerciseMap = exerciseMap;
+        _cycleReadyForAdvance = cycleReady;
         _isLoading = false;
       });
     } catch (e) {
@@ -166,6 +183,163 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
         'target_cycles': result == -1 ? null : result,
       });
     }
+  }
+
+  Future<void> _toggleDeload(bool enable) async {
+    if (!enable) {
+      // Warn the user that scheduled deload workouts will be deleted
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Remove Deload Week?'),
+          content: const Text(
+            'This will delete all scheduled deload workouts from the current cycle. '
+            'Completed deload workouts are kept. Future cycles will be 3 weeks long.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text('Remove Deload'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+    }
+
+    await _updateProgram({'include_deload': enable});
+  }
+
+  Future<void> _showAdvanceCycleDialog() async {
+    final program = _programDetail!;
+    final cycleNumber = program.currentCycle;
+    double pressIncrement = 5.0;
+    double benchIncrement = 5.0;
+    double squatIncrement = 10.0;
+    double deadliftIncrement = 10.0;
+    bool isLoading = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+
+          Widget incrementField(
+            String label,
+            double value,
+            void Function(double) onChanged,
+          ) {
+            final controller = TextEditingController(text: value.toStringAsFixed(0));
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text(label, style: const TextStyle(fontSize: 14)),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: controller,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        suffixText: 'lbs',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      ),
+                      onChanged: (v) {
+                        final parsed = double.tryParse(v);
+                        if (parsed != null && parsed >= 0) onChanged(parsed);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return AlertDialog(
+            title: Text('Cycle $cycleNumber Complete!'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your training maxes will increase for the next cycle. Adjust the increments below if desired.',
+                  ),
+                  const SizedBox(height: 16),
+                  incrementField('Press', pressIncrement, (v) => setDialogState(() => pressIncrement = v)),
+                  incrementField('Bench Press', benchIncrement, (v) => setDialogState(() => benchIncrement = v)),
+                  incrementField('Squat', squatIncrement, (v) => setDialogState(() => squatIncrement = v)),
+                  incrementField('Deadlift', deadliftIncrement, (v) => setDialogState(() => deadliftIncrement = v)),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Navigator.of(ctx).pop(),
+                child: const Text('Not Now'),
+              ),
+              FilledButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        setDialogState(() => isLoading = true);
+                        try {
+                          final apiService = ref.read(apiServiceProvider);
+                          await apiService.completeCycle(
+                            widget.programId,
+                            pressIncrement: pressIncrement,
+                            benchPressIncrement: benchIncrement,
+                            squatIncrement: squatIncrement,
+                            deadliftIncrement: deadliftIncrement,
+                          );
+                          await apiService.generateNextCycle(widget.programId);
+
+                          if (ctx.mounted) Navigator.of(ctx).pop();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Cycle ${cycleNumber + 1} started!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            await _loadProgramDetail();
+                          }
+                        } catch (e) {
+                          setDialogState(() => isLoading = false);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Start Next Cycle'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _showEndProgramDialog() async {
@@ -628,6 +802,42 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
             ),
           ),
 
+          // Deload Week Toggle (not applicable to 3-day programs)
+          if (program.templateType != '3_day') ...[
+            const SizedBox(height: 12),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade200),
+              ),
+              child: SwitchListTile(
+                secondary: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.hotel, color: Colors.grey.shade700),
+                ),
+                title: const Text(
+                  'Deload Week',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(
+                  program.includeDeload
+                      ? 'Week 4 is a deload (4-week cycles)'
+                      : 'No deload — 3-week cycles',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                ),
+                value: program.includeDeload,
+                onChanged: isActive ? (value) => _toggleDeload(value) : null,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+
           // End Program Button (only show for active programs)
           if (isActive) ...[
             const SizedBox(height: 24),
@@ -753,6 +963,54 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_cycleReadyForAdvance) ...[
+            Card(
+              color: Colors.teal.shade50,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+                side: BorderSide(color: Colors.teal.shade300),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.emoji_events, color: Colors.teal.shade700, size: 32),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Cycle ${program.currentCycle} Complete — Ready for Next Cycle',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Colors.teal.shade900,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Update your training maxes and generate the next cycle\'s workouts.',
+                            style: TextStyle(color: Colors.teal.shade800, fontSize: 12),
+                          ),
+                          const SizedBox(height: 10),
+                          FilledButton(
+                            onPressed: _showAdvanceCycleDialog,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.teal.shade600,
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            ),
+                            child: const Text('Start Next Cycle'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           Text(
             'Progress',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(

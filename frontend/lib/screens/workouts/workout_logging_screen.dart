@@ -499,8 +499,164 @@ class _WorkoutLoggingScreenState extends ConsumerState<WorkoutLoggingScreen>
     );
 
     if (mounted) {
-      context.go('/workouts');
+      await _checkAndHandleCycleCompletion();
     }
+  }
+
+  Future<void> _checkAndHandleCycleCompletion() async {
+    final detail = _workoutDetail;
+    if (detail == null) {
+      context.go('/workouts');
+      return;
+    }
+
+    try {
+      final apiService = ref.read(apiServiceProvider);
+      final remaining = await apiService.getWorkouts(
+        programId: detail.programId,
+        status: 'scheduled',
+        cycleNumber: detail.cycleNumber,
+      );
+
+      if (!mounted) return;
+
+      if (remaining.isEmpty) {
+        await _showCycleCompleteDialog(detail.programId, detail.cycleNumber);
+      } else {
+        context.go('/workouts');
+      }
+    } catch (_) {
+      if (mounted) context.go('/workouts');
+    }
+  }
+
+  Future<void> _showCycleCompleteDialog(String programId, int cycleNumber) async {
+    double pressIncrement = 5.0;
+    double benchIncrement = 5.0;
+    double squatIncrement = 10.0;
+    double deadliftIncrement = 10.0;
+    bool isLoading = false;
+
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          Widget incrementField(
+            String label,
+            double value,
+            void Function(double) onChanged,
+          ) {
+            final controller = TextEditingController(text: value.toStringAsFixed(0));
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: Text(label, style: const TextStyle(fontSize: 14)),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: controller,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: const InputDecoration(
+                        suffixText: 'lbs',
+                        isDense: true,
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                      ),
+                      onChanged: (v) {
+                        final parsed = double.tryParse(v);
+                        if (parsed != null && parsed >= 0) onChanged(parsed);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return AlertDialog(
+            title: Text('Cycle $cycleNumber Complete!'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your training maxes will increase for the next cycle. Adjust the increments below if desired.',
+                  ),
+                  const SizedBox(height: 16),
+                  incrementField('Press', pressIncrement, (v) => setDialogState(() => pressIncrement = v)),
+                  incrementField('Bench Press', benchIncrement, (v) => setDialogState(() => benchIncrement = v)),
+                  incrementField('Squat', squatIncrement, (v) => setDialogState(() => squatIncrement = v)),
+                  incrementField('Deadlift', deadliftIncrement, (v) => setDialogState(() => deadliftIncrement = v)),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isLoading
+                    ? null
+                    : () {
+                        Navigator.of(ctx).pop();
+                        context.go('/workouts');
+                      },
+                child: const Text('Not Now'),
+              ),
+              FilledButton(
+                onPressed: isLoading
+                    ? null
+                    : () async {
+                        setDialogState(() => isLoading = true);
+                        try {
+                          final apiService = ref.read(apiServiceProvider);
+                          await apiService.completeCycle(
+                            programId,
+                            pressIncrement: pressIncrement,
+                            benchPressIncrement: benchIncrement,
+                            squatIncrement: squatIncrement,
+                            deadliftIncrement: deadliftIncrement,
+                          );
+                          await apiService.generateNextCycle(programId);
+
+                          if (ctx.mounted) Navigator.of(ctx).pop();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Cycle ${cycleNumber + 1} started!'),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                            context.go('/workouts');
+                          }
+                        } catch (e) {
+                          setDialogState(() => isLoading = false);
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        }
+                      },
+                child: isLoading
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Text('Start Next Cycle'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _endCurrentExercise() async {

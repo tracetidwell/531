@@ -26,6 +26,14 @@ class TrainingMaxInput(BaseModel):
         }
 
 
+class CompleteCycleRequest(BaseModel):
+    """Optional overrides for training max increments."""
+    press_increment: float = Field(default=5.0, ge=0, description="Press increment in lbs")
+    bench_press_increment: float = Field(default=5.0, ge=0, description="Bench Press increment in lbs")
+    squat_increment: float = Field(default=10.0, ge=0, description="Squat increment in lbs")
+    deadlift_increment: float = Field(default=10.0, ge=0, description="Deadlift increment in lbs")
+
+
 class AccessoryExerciseInput(BaseModel):
     """Schema for an accessory exercise in a program."""
 
@@ -266,6 +274,7 @@ class ProgramUpdateRequest(BaseModel):
     status: Optional[ProgramStatus] = Field(None, description="Program status")
     end_date: Optional[date] = Field(None, description="End date")
     target_cycles: Optional[int] = Field(None, ge=1, le=52, description="Number of cycles to run")
+    include_deload: Optional[bool] = Field(None, description="Include deload week in each cycle. Setting to false deletes scheduled deload workouts.")
 
     class Config:
         json_schema_extra = {
