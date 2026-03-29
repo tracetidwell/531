@@ -306,6 +306,25 @@ class AccessoriesUpdateRequest(BaseModel):
         }
 
 
+class UpdateCycleTrainingMaxRequest(BaseModel):
+    """Request body for editing training maxes for a specific cycle."""
+
+    squat: Optional[float] = Field(None, gt=0, description="New training max for squat")
+    deadlift: Optional[float] = Field(None, gt=0, description="New training max for deadlift")
+    bench_press: Optional[float] = Field(None, gt=0, description="New training max for bench press")
+    press: Optional[float] = Field(None, gt=0, description="New training max for overhead press")
+
+
+class CycleTrainingMaxResponse(BaseModel):
+    """Training max values for a single cycle."""
+
+    cycle_number: int = Field(..., description="Cycle number")
+    squat: Optional[float] = Field(None, description="Training max for squat")
+    deadlift: Optional[float] = Field(None, description="Training max for deadlift")
+    bench_press: Optional[float] = Field(None, description="Training max for bench press")
+    press: Optional[float] = Field(None, description="Training max for overhead press")
+
+
 class ProgramDayAccessoriesResponse(BaseModel):
     """Schema for program day accessories response."""
 

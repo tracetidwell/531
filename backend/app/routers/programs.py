@@ -13,6 +13,8 @@ from app.schemas.program import (
     AccessoriesUpdateRequest,
     ProgramDayAccessoriesResponse,
     CompleteCycleRequest,
+    UpdateCycleTrainingMaxRequest,
+    CycleTrainingMaxResponse,
 )
 from app.services.program import ProgramService
 from app.models.user import User
@@ -308,3 +310,39 @@ async def delete_program(
     This action cannot be undone.
     """
     ProgramService.delete_program(db, current_user, program_id)
+
+
+@router.get(
+    "/{program_id}/cycles/{cycle_number}/training-maxes",
+    response_model=CycleTrainingMaxResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get training maxes for a cycle",
+    description="Get the training max values for each lift in a specific cycle."
+)
+async def get_cycle_training_maxes(
+    program_id: str,
+    cycle_number: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> CycleTrainingMaxResponse:
+    return ProgramService.get_cycle_training_maxes(db, current_user, program_id, cycle_number)
+
+
+@router.put(
+    "/{program_id}/cycles/{cycle_number}/training-maxes",
+    response_model=CycleTrainingMaxResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Edit training maxes for a cycle",
+    description="Update training max values for one or more lifts in a specific cycle. "
+                "Updates the snapshot on all scheduled workouts in that cycle so prescribed weights stay correct."
+)
+async def update_cycle_training_maxes(
+    program_id: str,
+    cycle_number: int,
+    request: UpdateCycleTrainingMaxRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> CycleTrainingMaxResponse:
+    return ProgramService.update_cycle_training_maxes(
+        db, current_user, program_id, cycle_number, request
+    )

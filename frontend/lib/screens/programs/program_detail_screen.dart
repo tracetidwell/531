@@ -1140,6 +1140,112 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
     );
   }
 
+  Future<void> _showEditTrainingMaxesDialog(int cycleNumber) async {
+    final apiService = ref.read(apiServiceProvider);
+
+    // Load current values first
+    Map<String, dynamic> current;
+    try {
+      current = await apiService.getCycleTrainingMaxes(widget.programId, cycleNumber);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading training maxes: $e')),
+        );
+      }
+      return;
+    }
+
+    final liftKeys = ['squat', 'deadlift', 'bench_press', 'press'];
+    final liftLabels = {
+      'squat': 'Squat',
+      'deadlift': 'Deadlift',
+      'bench_press': 'Bench Press',
+      'press': 'Overhead Press',
+    };
+    final controllers = {
+      for (final k in liftKeys)
+        k: TextEditingController(
+          text: current[k] != null ? (current[k] as num).toInt().toString() : '',
+        )
+    };
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('Edit Training Maxes — Cycle $cycleNumber'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final k in liftKeys) ...[
+                TextField(
+                  controller: controllers[k],
+                  decoration: InputDecoration(
+                    labelText: '${liftLabels[k]} (lbs)',
+                    border: const OutlineInputBorder(),
+                  ),
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                ),
+                const SizedBox(height: 12),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != true) {
+      for (final c in controllers.values) {
+        c.dispose();
+      }
+      return;
+    }
+
+    final updates = <String, double>{};
+    for (final k in liftKeys) {
+      final parsed = double.tryParse(controllers[k]!.text);
+      if (parsed != null && parsed > 0) {
+        updates[k] = parsed;
+      }
+    }
+
+    for (final c in controllers.values) {
+      c.dispose();
+    }
+
+    if (updates.isEmpty) return;
+
+    setState(() => _isSaving = true);
+    try {
+      await apiService.updateCycleTrainingMaxes(widget.programId, cycleNumber, updates);
+      await _loadProgramDetail();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Training maxes updated')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
   Widget _buildTrainingMaxesSection() {
     final program = _programDetail!;
 
@@ -1148,11 +1254,22 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Training Maxes',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Training Maxes',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
+              ),
+              TextButton.icon(
+                onPressed: () => _showEditTrainingMaxesDialog(program.currentCycle),
+                icon: const Icon(Icons.edit, size: 16),
+                label: const Text('Edit'),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           ...program.trainingMaxes.entries.map((entry) {

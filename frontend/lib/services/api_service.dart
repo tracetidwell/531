@@ -252,6 +252,34 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getCycleTrainingMaxes(
+    String programId,
+    int cycleNumber,
+  ) async {
+    try {
+      final response = await _dio.get('/programs/$programId/cycles/$cycleNumber/training-maxes');
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> updateCycleTrainingMaxes(
+    String programId,
+    int cycleNumber,
+    Map<String, double> values,
+  ) async {
+    try {
+      final response = await _dio.put(
+        '/programs/$programId/cycles/$cycleNumber/training-maxes',
+        data: values,
+      );
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      throw _handleError(e);
+    }
+  }
+
   Future<Map<String, dynamic>> completeCycle(
     String programId, {
     double pressIncrement = 5.0,
