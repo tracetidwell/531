@@ -633,6 +633,7 @@ class ProgramService:
             end_date=program.end_date,
             target_cycles=program.target_cycles,
             status=program.status,
+            include_deload=bool(program.include_deload),
             training_days=program.training_days,
             current_cycle=current_cycle,
             current_week=current_week,

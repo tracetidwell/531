@@ -206,6 +206,7 @@ class ProgramResponse(BaseModel):
     start_date: date = Field(..., description="Start date")
     end_date: Optional[date] = Field(None, description="End date")
     status: ProgramStatus = Field(..., description="Program status")
+    include_deload: bool = Field(default=True, description="Whether deload week is included")
     training_days: List[str] = Field(..., description="Training days")
     created_at: datetime = Field(..., description="Creation timestamp")
 
@@ -219,6 +220,7 @@ class ProgramResponse(BaseModel):
                 "start_date": "2025-01-01",
                 "end_date": None,
                 "status": "active",
+                "include_deload": True,
                 "training_days": ["monday", "tuesday", "thursday", "saturday"],
                 "created_at": "2025-01-01T10:00:00"
             }
@@ -235,6 +237,7 @@ class ProgramDetailResponse(BaseModel):
     end_date: Optional[date] = Field(None, description="End date")
     target_cycles: Optional[int] = Field(None, description="Number of cycles to run")
     status: ProgramStatus = Field(..., description="Program status")
+    include_deload: bool = Field(default=True, description="Whether deload week is included")
     training_days: List[str] = Field(..., description="Training days")
     current_cycle: int = Field(default=1, description="Current cycle number")
     current_week: int = Field(default=1, description="Current week number")
