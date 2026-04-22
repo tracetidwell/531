@@ -94,3 +94,10 @@ frontend/web/.env
 
 # Docker
 *.pid
+
+# Local planning notes
+plans/
+
+# AWS CLI installer artifacts
+backend/aws/
+backend/awscliv2.zip
