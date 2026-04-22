@@ -5,7 +5,8 @@ import pytest
 from datetime import date, timedelta
 from app.models.user import User
 from app.models.exercise import Exercise, ExerciseCategory
-from app.models.program import Program, ProgramStatus
+from app.models.program import Program, ProgramStatus, TrainingMax, LiftType, TrainingMaxReason
+from app.models.workout import Workout, WorkoutMainLift, WorkoutStatus, WeekType
 from app.utils.security import get_password_hash
 import uuid
 
@@ -418,6 +419,202 @@ class TestProgramUpdate:
         assert data["end_date"] == end_date.isoformat()
 
 
+class TestDeloadManagement:
+    """Tests for toggling include_deload on existing programs."""
+
+    @pytest.fixture
+    def program_with_deload_workouts(self, db, test_user):
+        """Program with a mix of scheduled and completed workouts across weeks 1-4."""
+        program = Program(
+            id=str(uuid.uuid4()),
+            user_id=test_user.id,
+            name="Deload Test Program",
+            template_type="4_day",
+            start_date=date.today() - timedelta(days=21),
+            training_days=["monday", "tuesday", "thursday", "friday"],
+            status=ProgramStatus.ACTIVE,
+            include_deload=True,
+        )
+        db.add(program)
+        db.flush()
+
+        week_configs = [
+            (1, WeekType.WEEK_1_5S, WorkoutStatus.COMPLETED),
+            (2, WeekType.WEEK_2_3S, WorkoutStatus.COMPLETED),
+            (3, WeekType.WEEK_3_531, WorkoutStatus.SCHEDULED),
+            (4, WeekType.WEEK_4_DELOAD, WorkoutStatus.SCHEDULED),
+        ]
+
+        workouts = {}
+        for week_num, week_type, status in week_configs:
+            w = Workout(
+                id=str(uuid.uuid4()),
+                program_id=program.id,
+                scheduled_date=date.today() - timedelta(days=21) + timedelta(weeks=week_num - 1),
+                cycle_number=1,
+                week_number=week_num,
+                week_type=week_type,
+                status=status,
+            )
+            db.add(w)
+            workouts[week_num] = w
+
+        db.commit()
+        db.refresh(program)
+        workouts['program'] = program
+        return workouts
+
+    def test_disable_deload_deletes_scheduled_deload_workouts(
+        self, client, auth_token, program_with_deload_workouts
+    ):
+        """Setting include_deload=False removes scheduled week-4 workouts."""
+        program = program_with_deload_workouts['program']
+
+        response = client.put(
+            f"/api/v1/programs/{program.id}",
+            json={"include_deload": False},
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        assert response.status_code == 200
+
+        # Deload workout should be gone
+        from app.models.workout import Workout as WorkoutModel
+        from app.database import get_db
+        # Verify via API instead
+        workouts_resp = client.get(
+            f"/api/v1/workouts?program_id={program.id}&workout_status=SCHEDULED",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert workouts_resp.status_code == 200
+        scheduled = workouts_resp.json()
+        week_types = [w['week_type'] for w in scheduled]
+        assert 'WEEK_4_DELOAD' not in week_types
+
+    def test_disable_deload_preserves_completed_deload_workouts(
+        self, client, auth_token, db, test_user
+    ):
+        """Setting include_deload=False does NOT delete already-completed deload workouts."""
+        program = Program(
+            id=str(uuid.uuid4()),
+            user_id=test_user.id,
+            name="Deload Preserve Test",
+            template_type="4_day",
+            start_date=date.today() - timedelta(days=28),
+            training_days=["monday", "tuesday", "thursday", "friday"],
+            status=ProgramStatus.ACTIVE,
+            include_deload=True,
+        )
+        db.add(program)
+        db.flush()
+
+        # Completed deload workout from a previous cycle
+        completed_deload = Workout(
+            id=str(uuid.uuid4()),
+            program_id=program.id,
+            scheduled_date=date.today() - timedelta(days=7),
+            cycle_number=1,
+            week_number=4,
+            week_type=WeekType.WEEK_4_DELOAD,
+            status=WorkoutStatus.COMPLETED,
+        )
+        db.add(completed_deload)
+        db.commit()
+
+        response = client.put(
+            f"/api/v1/programs/{program.id}",
+            json={"include_deload": False},
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        assert response.status_code == 200
+
+        # The completed deload workout must still exist
+        workouts_resp = client.get(
+            f"/api/v1/workouts?program_id={program.id}&workout_status=COMPLETED",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        completed = workouts_resp.json()
+        assert any(w['week_type'] == 'WEEK_4_DELOAD' for w in completed)
+
+    def test_enable_deload_does_not_generate_workouts(
+        self, client, auth_token, db, test_user
+    ):
+        """Setting include_deload=True on a program without deload only updates the flag."""
+        program = Program(
+            id=str(uuid.uuid4()),
+            user_id=test_user.id,
+            name="Enable Deload Test",
+            template_type="4_day",
+            start_date=date.today(),
+            training_days=["monday", "tuesday", "thursday", "friday"],
+            status=ProgramStatus.ACTIVE,
+            include_deload=False,
+        )
+        db.add(program)
+        db.commit()
+
+        before_resp = client.get(
+            f"/api/v1/workouts?program_id={program.id}",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        before_count = len(before_resp.json())
+
+        response = client.put(
+            f"/api/v1/programs/{program.id}",
+            json={"include_deload": True},
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        assert response.status_code == 200
+
+        after_resp = client.get(
+            f"/api/v1/workouts?program_id={program.id}",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert len(after_resp.json()) == before_count  # No new workouts generated
+
+    def test_disable_deload_updates_program_flag(
+        self, client, auth_token, program_with_deload_workouts
+    ):
+        """include_deload flag is persisted correctly when set to False."""
+        program = program_with_deload_workouts['program']
+
+        client.put(
+            f"/api/v1/programs/{program.id}",
+            json={"include_deload": False},
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        detail_resp = client.get(
+            f"/api/v1/programs/{program.id}",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert detail_resp.status_code == 200
+        # include_deload comes back as falsy (0 or False)
+        assert not detail_resp.json().get("include_deload")
+
+    def test_disable_deload_preserves_non_deload_scheduled_workouts(
+        self, client, auth_token, program_with_deload_workouts
+    ):
+        """Only deload workouts are removed; other scheduled workouts stay."""
+        program = program_with_deload_workouts['program']
+
+        client.put(
+            f"/api/v1/programs/{program.id}",
+            json={"include_deload": False},
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        workouts_resp = client.get(
+            f"/api/v1/workouts?program_id={program.id}&workout_status=SCHEDULED",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        scheduled = workouts_resp.json()
+        # Week 3 (5/3/1 week) should still be scheduled
+        assert any(w['week_type'] == 'WEEK_3_531' for w in scheduled)
+
+
 class TestProgramTemplates:
     """Tests for program templates and accessories."""
 
@@ -702,6 +899,105 @@ class TestProgramTemplates:
 
         assert response.status_code == 404
 
+    def test_create_program_with_weight(self, client, auth_token, test_exercises):
+        """Test creating a program with weight values on accessories."""
+        start_date = date.today()
+
+        program_data = {
+            "name": "Program With Weights",
+            "template_type": "4_day",
+            "start_date": start_date.isoformat(),
+            "training_days": ["monday", "tuesday", "thursday", "friday"],
+            "training_maxes": {
+                "press": 100,
+                "deadlift": 300,
+                "bench_press": 200,
+                "squat": 250
+            },
+            "accessories": {
+                "1": [
+                    {"exercise_id": test_exercises["push"], "sets": 5, "reps": 10, "weight": 135.0},
+                    {"exercise_id": test_exercises["core"], "sets": 3, "reps": 15}
+                ],
+                "2": [
+                    {"exercise_id": test_exercises["pull"], "sets": 4, "reps": 12, "weight": 100.0}
+                ],
+                "3": [
+                    {"exercise_id": test_exercises["push"], "sets": 5, "reps": 10, "weight": 95.0}
+                ],
+                "4": [
+                    {"exercise_id": test_exercises["legs"], "sets": 3, "reps": 12}
+                ]
+            }
+        }
+
+        response = client.post(
+            "/api/v1/programs",
+            json=program_data,
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+
+        assert response.status_code == 201
+        program_id = response.json()["id"]
+
+        # Verify weight is stored in templates
+        templates_response = client.get(
+            f"/api/v1/programs/{program_id}/templates",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        assert templates_response.status_code == 200
+        templates = templates_response.json()
+
+        day1 = next(t for t in templates if t["day_number"] == 1)
+        assert day1["accessories"][0]["weight"] == 135.0
+        assert day1["accessories"][1]["weight"] is None  # No weight specified
+
+        day2 = next(t for t in templates if t["day_number"] == 2)
+        assert day2["accessories"][0]["weight"] == 100.0
+
+        # Verify weight is stored in day-accessories
+        day_acc_response = client.get(
+            f"/api/v1/programs/{program_id}/day-accessories",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        assert day_acc_response.status_code == 200
+        day_accessories = day_acc_response.json()
+
+        da1 = next(da for da in day_accessories if da["day_number"] == 1)
+        assert da1["accessories"][0]["weight"] == 135.0
+        assert da1["accessories"][1]["weight"] is None
+
+    def test_update_accessories_with_weight(self, client, auth_token, program_with_accessories, test_exercises):
+        """Test updating accessories with weight values."""
+        program_id = program_with_accessories["id"]
+
+        new_accessories = [
+            {"exercise_id": test_exercises["push"], "sets": 5, "reps": 10, "weight": 150.0},
+            {"exercise_id": test_exercises["core"], "sets": 3, "reps": 15, "weight": 25.0}
+        ]
+
+        response = client.put(
+            f"/api/v1/programs/{program_id}/days/1/accessories",
+            json={"accessories": new_accessories},
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["accessories"][0]["weight"] == 150.0
+        assert data["accessories"][1]["weight"] == 25.0
+
+        # Verify it persists via templates endpoint
+        templates_response = client.get(
+            f"/api/v1/programs/{program_id}/templates",
+            headers={"Authorization": f"Bearer {auth_token}"}
+        )
+        templates = templates_response.json()
+        day1 = next(t for t in templates if t["day_number"] == 1)
+        assert day1["accessories"][0]["weight"] == 150.0
+        assert day1["accessories"][1]["weight"] == 25.0
+
     def test_day_accessories_sync_with_templates(self, client, auth_token, program_with_accessories, test_exercises):
         """Test that day accessories and templates return the same accessories."""
         program_id = program_with_accessories["id"]
@@ -728,3 +1024,295 @@ class TestProgramTemplates:
             # All templates for the same day should have the same accessories
             for template in day_templates:
                 assert template["accessories"] == day_acc["accessories"]
+
+
+class TestCycleManagement:
+    """Tests for complete-cycle and generate-next-cycle endpoints."""
+
+    @pytest.fixture
+    def program_with_tms(self, db, test_user):
+        """4-day program with cycle-1 training maxes."""
+        program = Program(
+            id=str(uuid.uuid4()),
+            user_id=test_user.id,
+            name="Cycle Test Program",
+            template_type="4_day",
+            start_date=date.today() - timedelta(days=28),
+            training_days=["monday", "tuesday", "thursday", "friday"],
+            status=ProgramStatus.ACTIVE,
+            include_deload=True,
+        )
+        db.add(program)
+        db.flush()
+
+        for lift, value in [
+            (LiftType.PRESS, 100.0),
+            (LiftType.BENCH_PRESS, 200.0),
+            (LiftType.SQUAT, 250.0),
+            (LiftType.DEADLIFT, 300.0),
+        ]:
+            db.add(TrainingMax(
+                id=str(uuid.uuid4()),
+                program_id=program.id,
+                lift_type=lift,
+                value=value,
+                effective_date=program.start_date,
+                cycle_number=1,
+                reason=TrainingMaxReason.INITIAL,
+            ))
+
+        db.commit()
+        db.refresh(program)
+        return program
+
+    @pytest.fixture
+    def program_with_completed_workout(self, db, program_with_tms):
+        """Add one completed workout so generate-next-cycle can find latest cycle."""
+        workout = Workout(
+            id=str(uuid.uuid4()),
+            program_id=program_with_tms.id,
+            scheduled_date=date.today() - timedelta(days=1),
+            cycle_number=1,
+            week_number=4,
+            week_type=WeekType.WEEK_4_DELOAD,
+            status=WorkoutStatus.COMPLETED,
+        )
+        db.add(workout)
+        db.flush()
+        db.add(WorkoutMainLift(
+            id=str(uuid.uuid4()),
+            workout_id=workout.id,
+            lift_type=LiftType.SQUAT,
+            lift_order=1,
+            current_training_max=250.0,
+            week_type=WeekType.WEEK_4_DELOAD,
+        ))
+        db.commit()
+        return program_with_tms
+
+    @pytest.fixture
+    def program_with_full_cycle(self, db, program_with_tms):
+        """Add 4 workouts spread across a cycle so the date bug is detectable."""
+        base = date.today() - timedelta(days=28)
+        for week, week_type in enumerate(
+            [WeekType.WEEK_1_5S, WeekType.WEEK_2_3S, WeekType.WEEK_3_531, WeekType.WEEK_4_DELOAD],
+            start=1,
+        ):
+            workout = Workout(
+                id=str(uuid.uuid4()),
+                program_id=program_with_tms.id,
+                scheduled_date=base + timedelta(weeks=week - 1),
+                cycle_number=1,
+                week_number=week,
+                week_type=week_type,
+                status=WorkoutStatus.COMPLETED,
+            )
+            db.add(workout)
+            db.flush()
+            db.add(WorkoutMainLift(
+                id=str(uuid.uuid4()),
+                workout_id=workout.id,
+                lift_type=LiftType.SQUAT,
+                lift_order=1,
+                current_training_max=250.0,
+                week_type=week_type,
+            ))
+        db.commit()
+        return program_with_tms
+
+    # ------------------------------------------------------------------
+    # complete-cycle tests
+    # ------------------------------------------------------------------
+
+    def test_complete_cycle_default_increments(self, client, auth_token, program_with_tms):
+        """complete-cycle with no body uses standard 5/3/1 increments."""
+        pid = program_with_tms.id
+
+        response = client.post(
+            f"/api/v1/programs/{pid}/complete-cycle",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["cycle_completed"] == 1
+        assert data["next_cycle"] == 2
+
+        updates = data["training_max_updates"]
+        assert updates["PRESS"]["increase"] == 5.0
+        assert updates["PRESS"]["new_value"] == 105.0
+        assert updates["BENCH_PRESS"]["increase"] == 5.0
+        assert updates["BENCH_PRESS"]["new_value"] == 205.0
+        assert updates["SQUAT"]["increase"] == 10.0
+        assert updates["SQUAT"]["new_value"] == 260.0
+        assert updates["DEADLIFT"]["increase"] == 10.0
+        assert updates["DEADLIFT"]["new_value"] == 310.0
+
+    def test_complete_cycle_custom_increments(self, client, auth_token, program_with_tms):
+        """complete-cycle accepts custom per-lift increments."""
+        pid = program_with_tms.id
+
+        response = client.post(
+            f"/api/v1/programs/{pid}/complete-cycle",
+            json={
+                "press_increment": 2.5,
+                "bench_press_increment": 2.5,
+                "squat_increment": 5.0,
+                "deadlift_increment": 5.0,
+            },
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        updates = data["training_max_updates"]
+
+        assert updates["PRESS"]["increase"] == 2.5
+        assert updates["PRESS"]["new_value"] == 102.5
+        assert updates["BENCH_PRESS"]["increase"] == 2.5
+        assert updates["SQUAT"]["increase"] == 5.0
+        assert updates["SQUAT"]["new_value"] == 255.0
+        assert updates["DEADLIFT"]["increase"] == 5.0
+        assert updates["DEADLIFT"]["new_value"] == 305.0
+
+    def test_complete_cycle_zero_increments(self, client, auth_token, program_with_tms):
+        """complete-cycle with zero increments keeps training maxes the same."""
+        pid = program_with_tms.id
+
+        response = client.post(
+            f"/api/v1/programs/{pid}/complete-cycle",
+            json={
+                "press_increment": 0.0,
+                "bench_press_increment": 0.0,
+                "squat_increment": 0.0,
+                "deadlift_increment": 0.0,
+            },
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        assert response.status_code == 200
+        updates = response.json()["training_max_updates"]
+        assert updates["PRESS"]["increase"] == 0.0
+        assert updates["PRESS"]["new_value"] == 100.0
+        assert updates["SQUAT"]["new_value"] == 250.0
+
+    def test_complete_cycle_negative_increment_rejected(self, client, auth_token, program_with_tms):
+        """complete-cycle rejects negative increments."""
+        response = client.post(
+            f"/api/v1/programs/{program_with_tms.id}/complete-cycle",
+            json={"press_increment": -5.0},
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert response.status_code == 422
+
+    def test_complete_cycle_requires_auth(self, client, program_with_tms):
+        """complete-cycle without auth returns 403."""
+        response = client.post(f"/api/v1/programs/{program_with_tms.id}/complete-cycle")
+        assert response.status_code == 403
+
+    def test_complete_cycle_wrong_program(self, client, auth_token):
+        """complete-cycle on a non-existent program returns 404."""
+        response = client.post(
+            "/api/v1/programs/nonexistent-id/complete-cycle",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert response.status_code == 404
+
+    # ------------------------------------------------------------------
+    # generate-next-cycle tests
+    # ------------------------------------------------------------------
+
+    def test_generate_next_cycle_start_date_follows_last_workout(
+        self, client, auth_token, program_with_full_cycle
+    ):
+        """Cycle 2 starts one week after the *last* workout, not an arbitrary one."""
+        pid = program_with_full_cycle.id
+        # The last workout is 3 weeks after the base date (week 4 deload)
+        expected_start = date.today() - timedelta(days=28) + timedelta(weeks=3) + timedelta(weeks=1)
+
+        client.post(
+            f"/api/v1/programs/{pid}/complete-cycle",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        gen_resp = client.post(
+            f"/api/v1/programs/{pid}/generate-next-cycle",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert gen_resp.status_code == 200
+        assert gen_resp.json()["start_date"] == expected_start.isoformat()
+
+    def test_generate_next_cycle_success(self, client, auth_token, program_with_completed_workout):
+        """generate-next-cycle creates new workouts after complete-cycle."""
+        pid = program_with_completed_workout.id
+
+        # First complete the cycle to create cycle-2 TMs
+        complete_resp = client.post(
+            f"/api/v1/programs/{pid}/complete-cycle",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert complete_resp.status_code == 200
+
+        # Now generate next cycle
+        gen_resp = client.post(
+            f"/api/v1/programs/{pid}/generate-next-cycle",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert gen_resp.status_code == 200
+        data = gen_resp.json()
+
+        assert data["cycle_number"] == 2
+        assert data["workouts_generated"] > 0
+
+    def test_generate_next_cycle_without_complete_cycle_fails(
+        self, client, auth_token, program_with_completed_workout
+    ):
+        """generate-next-cycle fails if complete-cycle has not been called first."""
+        pid = program_with_completed_workout.id
+
+        response = client.post(
+            f"/api/v1/programs/{pid}/generate-next-cycle",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        # No cycle-2 TMs exist yet → should fail
+        assert response.status_code == 400
+
+    def test_generate_next_cycle_requires_auth(self, client, program_with_completed_workout):
+        """generate-next-cycle without auth returns 403."""
+        response = client.post(
+            f"/api/v1/programs/{program_with_completed_workout.id}/generate-next-cycle"
+        )
+        assert response.status_code == 403
+
+    def test_complete_then_generate_uses_custom_increments(
+        self, client, auth_token, program_with_completed_workout
+    ):
+        """Training maxes in generated cycle 2 reflect custom increments from complete-cycle."""
+        pid = program_with_completed_workout.id
+
+        client.post(
+            f"/api/v1/programs/{pid}/complete-cycle",
+            json={
+                "press_increment": 2.5,
+                "bench_press_increment": 2.5,
+                "squat_increment": 5.0,
+                "deadlift_increment": 5.0,
+            },
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        client.post(
+            f"/api/v1/programs/{pid}/generate-next-cycle",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+
+        # Verify the program detail reflects the new TMs
+        detail_resp = client.get(
+            f"/api/v1/programs/{pid}",
+            headers={"Authorization": f"Bearer {auth_token}"},
+        )
+        assert detail_resp.status_code == 200
+        tms = detail_resp.json()["training_maxes"]
+        assert tms["PRESS"]["value"] == 102.5
+        assert tms["BENCH_PRESS"]["value"] == 202.5
+        assert tms["SQUAT"]["value"] == 255.0
+        assert tms["DEADLIFT"]["value"] == 305.0

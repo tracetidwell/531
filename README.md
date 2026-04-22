@@ -1,283 +1,204 @@
 # 5/3/1 Strength Training App
 
-A mobile fitness application for managing the 5/3/1 strength training program by Jim Wendler. Track your training cycles, log workouts, manage progression, and visualize strength gains.
+A cross-platform mobile and web app for running Jim Wendler's 5/3/1 strength training program. The app manages multi-week training cycles, generates prescribed sets/weights automatically, logs workouts, and tracks strength progress over time.
 
 ## Features
 
-- ✅ **Program Management**: Create and manage 4-day (expandable to 2/3-day) training programs
-- ✅ **Workout Tracking**: Log warmup sets, working sets, and accessory exercises
-- ✅ **Smart Progression**: Automatic training max recommendations based on performance
-- ✅ **Rep Maxes**: Track personal records across 1-12 rep ranges
-- ✅ **Progress Analytics**: Visualize training max progression over time
-- ✅ **Offline Support**: Full offline workout logging with background sync
-- ✅ **Rest Timer**: Built-in rest timer with customizable durations
-- ✅ **Plate Calculator**: Shows which plates to load per side
+- **Program Management**: Create 2-, 3-, or 4-day training programs with configurable training days, optional deload weeks, and per-day main lift assignments
+- **Workout Logging**: Log warmup sets, working sets, AMRAP sets, and accessory exercises with actual reps and weight
+- **Auto-Progression**: Training maxes update automatically at cycle completion based on program rules and AMRAP performance
+- **Rep Max Tracking**: Record and track personal bests across 1–12 rep ranges
+- **Progress Analytics**: Chart training max history per lift to visualize strength gains over time
+- **Warmup Templates**: Customizable warmup protocols generated as a percentage of the day's training max
+- **Accessory Exercises**: Per-day accessory work with configurable sets, reps, and weight
+- **Plate Calculator**: Displays which plates to load per side for any given weight
+- **Rest Timer**: Built-in rest timer with audio cues
+- **Offline Support**: Full offline workout logging with background sync
 
-## Tech Stack
+## Architecture
+
+```
+frontend/          Flutter app (mobile + web)
+  lib/
+    screens/       UI screens (auth, home, programs, workouts, progress, settings)
+    providers/     Riverpod state providers
+    services/      API client (Dio), audio, workout session management
+    models/        Dart data classes
+    widgets/       Reusable UI components
+
+backend/           FastAPI REST API
+  app/
+    routers/       HTTP route handlers (auth, users, programs, workouts, exercises,
+                   rep_maxes, warmup_templates, analytics)
+    services/      Business logic layer
+    models/        SQLAlchemy ORM models
+    schemas/       Pydantic request/response schemas
+    utils/         JWT security, dependencies, weight calculations
+  alembic/         Database migrations
+  tests/           Pytest test suite
+
+Book/              Scanned reference pages from the 5/3/1 book (01–33 chapters)
+data/              SQLite database file (development)
+docker-compose.yml Local development stack
+```
 
 ### Backend
-- **Framework**: FastAPI (Python)
-- **Database**: SQLite with Alembic migrations
-- **Authentication**: JWT with refresh tokens
-- **Containerization**: Docker
+
+| Layer | Technology |
+|---|---|
+| Framework | FastAPI (Python 3.11) |
+| ORM | SQLAlchemy 2.0 |
+| Migrations | Alembic |
+| Auth | JWT (python-jose) with refresh tokens |
+| Database (dev) | SQLite |
+| Database (prod) | PostgreSQL (RDS) |
+| Containerization | Docker |
 
 ### Frontend
-- **Framework**: Flutter
-- **State Management**: Riverpod
-- **Local Database**: sqflite (for offline support)
-- **Charts**: fl_chart
 
-## Project Structure
+| Layer | Technology |
+|---|---|
+| Framework | Flutter 3.16+ (Dart) |
+| State Management | Riverpod |
+| HTTP Client | Dio |
+| Charts | fl_chart |
+| Secure Storage | flutter_secure_storage |
+| Navigation | go_router |
+
+### Production Deployment (AWS)
 
 ```
-.
-├── backend/                 # FastAPI backend
-│   ├── app/
-│   │   ├── models/         # SQLAlchemy database models
-│   │   ├── routers/        # API route handlers
-│   │   ├── schemas/        # Pydantic schemas
-│   │   ├── services/       # Business logic
-│   │   └── utils/          # Utilities
-│   ├── alembic/            # Database migrations
-│   ├── tests/              # Backend tests
-│   ├── Dockerfile
-│   └── requirements.txt
-├── frontend/               # Flutter mobile app
-│   └── README.md          # Flutter setup instructions
-├── data/                  # SQLite database
-├── docker-compose.yml     # Development setup
-└── 531_detailed_spec.md   # Complete specification
+[Route 53] → [CloudFront] → [S3]           (Flutter web build)
+                  ↓
+            [ALB] → [ECS Fargate]           (FastAPI, Docker)
+                         ↓
+                    [RDS PostgreSQL]
 ```
+
+For mobile-only deployments, App Runner replaces ALB + ECS and provides automatic HTTPS. See `scripts/aws/aws_instructions.md` for full setup steps.
+
+## Data Model
+
+| Entity | Purpose |
+|---|---|
+| `User` | Account with email/password and preferences |
+| `Program` | Training program (template type, training days, deload flag) |
+| `TrainingMax` | Current 1RM training max per lift per program |
+| `TrainingMaxHistory` | Audit log of all training max changes |
+| `ProgramTemplate` | Which main lift maps to each training day |
+| `ProgramDayAccessories` | Accessory exercises configured per day |
+| `Workout` | A single session (cycle/week/status) |
+| `WorkoutMainLift` | Junction between workout and its main lift(s) |
+| `WorkoutSet` | Individual logged set (warmup / working / AMRAP / accessory) |
+| `Exercise` | Exercise library (predefined + custom) |
+| `RepMax` | PR at a given rep range |
+| `WarmupTemplate` | Custom warmup percentage schemes |
 
 ## Quick Start
 
 ### Prerequisites
 
-- **Docker & Docker Compose** (for backend)
-- **Flutter SDK 3.16+** (for frontend)
-- **Python 3.11+** (if running backend without Docker)
+- Docker & Docker Compose (backend)
+- Flutter SDK 3.16+ (frontend)
+- Python 3.11+ (if running backend without Docker)
 
-### 1. Backend Setup
-
-#### Option A: Docker (Recommended)
+### 1. Backend
 
 ```bash
-# Clone or navigate to the project
-cd /home/trace/Documents/531
-
-# Copy environment variables
+# Copy and configure environment
 cp backend/.env.example backend/.env
+# Set JWT_SECRET_KEY and SMTP credentials in backend/.env
 
-# Edit backend/.env and set:
-# - JWT_SECRET_KEY (generate a strong random string)
-# - SMTP credentials (for password reset emails)
-
-# Start the backend
+# Start with Docker
 docker-compose up -d
-
-# Run database migrations
 docker-compose exec backend alembic upgrade head
 
-# View logs
-docker-compose logs -f backend
-```
-
-The API will be available at `http://localhost:8000`
-API documentation at `http://localhost:8000/api/v1/docs`
-
-#### Option B: Local Python
-
-```bash
+# OR run locally
 cd backend
-
-# Create virtual environment
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
-# Copy and configure .env
 cp .env.example .env
-# Edit .env with your configuration
-
-# Run migrations
 alembic upgrade head
-
-# Start the server
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 2. Frontend Setup
+API: `http://localhost:8000`
+Swagger docs: `http://localhost:8000/api/v1/docs`
+
+### 2. Frontend
 
 ```bash
 cd frontend
-
-# Install Flutter if needed
-# Visit: https://flutter.dev/docs/get-started/install
-
-# Create the Flutter project (first time only)
-cd ..
-flutter create --org com.fiveThreeOne --project-name five_three_one_app frontend
-cd frontend
-
-# Get dependencies
 flutter pub get
-
-# Run the app
 flutter run
 ```
 
-See `frontend/README.md` for detailed Flutter setup instructions.
+The app expects the backend at `http://localhost:8000/api/v1` by default. To override:
+
+```bash
+flutter run --dart-define=API_BASE_URL=https://your-backend.example.com/api/v1
+```
 
 ## Development
 
 ### Running Tests
 
-**Backend:**
 ```bash
-cd backend
-source venv/bin/activate
+# Backend
+cd backend && source venv/bin/activate
 pytest
-```
+pytest --cov=app tests/   # with coverage
 
-**Frontend:**
-```bash
+# Frontend
 cd frontend
 flutter test
 ```
 
 ### Database Migrations
 
-**Create a new migration:**
 ```bash
 cd backend
-alembic revision --autogenerate -m "Description of changes"
+alembic revision --autogenerate -m "description"  # generate
+alembic upgrade head                               # apply
+alembic downgrade -1                               # rollback one
 ```
-
-**Apply migrations:**
-```bash
-alembic upgrade head
-```
-
-**Rollback:**
-```bash
-alembic downgrade -1
-```
-
-### API Documentation
-
-With the backend running, visit:
-- Swagger UI: `http://localhost:8000/api/v1/docs`
-- ReDoc: `http://localhost:8000/api/v1/redoc`
 
 ## Environment Variables
 
-### Backend (.env)
-
 ```bash
-# Database
+# backend/.env
 DATABASE_URL=sqlite:///../data/531.db
-
-# JWT Authentication
-JWT_SECRET_KEY=your-secret-key-here
+JWT_SECRET_KEY=<strong-random-string>
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=15
 REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# Email/SMTP
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
 SMTP_PASSWORD=your-app-password
 FROM_EMAIL=noreply@531app.com
-
-# API Settings
 API_VERSION=v1
 PROJECT_NAME=5/3/1 Training App
-
-# CORS
-CORS_ORIGINS=["http://localhost:3000","http://localhost:8080"]
 ```
 
-## Database Schema
+## API Reference
 
-The application uses the following main entities:
+| Tag | Endpoints |
+|---|---|
+| Auth | `POST /auth/register`, `/auth/login`, `/auth/refresh`, `/auth/request-password-reset`, `/auth/reset-password` |
+| Users | `GET/PUT /users/me` |
+| Programs | `GET/POST /programs`, `GET/PUT/DELETE /programs/{id}`, training max and template sub-routes |
+| Workouts | `GET /programs/{id}/workouts`, `GET/PUT /workouts/{id}`, `/workouts/{id}/start`, `/complete`, `/skip` |
+| Exercises | `GET/POST /exercises`, `GET/PUT/DELETE /exercises/{id}` |
+| Rep Maxes | `GET/POST /rep-maxes`, `GET/PUT/DELETE /rep-maxes/{id}` |
+| Warmup Templates | `GET/POST /warmup-templates`, `GET/PUT/DELETE /warmup-templates/{id}` |
+| Analytics | `GET /analytics/training-max-history`, `/analytics/workout-summary` |
 
-- **Users**: User accounts with preferences
-- **Programs**: Training programs with cycles
-- **TrainingMax**: Current training maxes per lift
-- **Workouts**: Individual workout sessions
-- **WorkoutSets**: Logged sets (warmup, working, accessory, AMRAP)
-- **Exercises**: Predefined and custom exercises
-- **RepMax**: Personal records at different rep ranges
-- **WarmupTemplate**: Custom warmup protocols
-
-See `531_detailed_spec.md` for complete data model specifications.
-
-## API Endpoints
-
-### Authentication
-- `POST /api/v1/auth/register` - Register new user
-- `POST /api/v1/auth/login` - Login
-- `POST /api/v1/auth/refresh` - Refresh access token
-- `POST /api/v1/auth/request-password-reset` - Request password reset
-- `POST /api/v1/auth/reset-password` - Reset password
-
-### Programs
-- `GET /api/v1/programs` - List user's programs
-- `POST /api/v1/programs` - Create new program
-- `GET /api/v1/programs/{id}` - Get program details
-- `PUT /api/v1/programs/{id}` - Update program
-
-### Workouts
-- `GET /api/v1/programs/{program_id}/workouts` - List workouts
-- `GET /api/v1/workouts/{id}` - Get workout details
-- `POST /api/v1/workouts/{id}/start` - Start workout
-- `POST /api/v1/workouts/{id}/complete` - Complete workout
-- `POST /api/v1/workouts/{id}/skip` - Skip workout
-
-See full API documentation at `/api/v1/docs` when server is running.
-
-## Deployment
-
-### Self-Hosting
-
-1. Clone repository on your server
-2. Configure `.env` file with production settings
-3. Use docker-compose for deployment:
-
-```bash
-docker-compose up -d
-```
-
-4. Set up reverse proxy (nginx) with SSL (Let's Encrypt)
-5. Configure automated database backups
-
-See `531_detailed_spec.md` Section 11 for detailed deployment instructions.
-
-## Roadmap
-
-- [ ] Complete authentication endpoints
-- [ ] Implement program creation and management
-- [ ] Build workout logging functionality
-- [ ] Add rep max tracking
-- [ ] Create progress charts
-- [ ] Implement offline sync
-- [ ] Add 2-day and 3-day program templates
-- [ ] Build social features (optional)
-
-## Contributing
-
-This is currently a personal project. See `531_detailed_spec.md` for the complete specification.
-
-## License
-
-Private project - All rights reserved.
+Full interactive docs available at `/api/v1/docs` when the server is running.
 
 ## References
 
-- [5/3/1 Program by Jim Wendler](https://www.jimwendler.com/blogs/jimwendler-com/101065094-5-3-1-for-beginners)
-- [FastAPI Documentation](https://fastapi.tiangolo.com/)
-- [Flutter Documentation](https://flutter.dev/docs)
-- [Riverpod Documentation](https://riverpod.dev/)
+- [5/3/1 by Jim Wendler](https://www.jimwendler.com/)
+- [FastAPI docs](https://fastapi.tiangolo.com/)
+- [Flutter docs](https://flutter.dev/docs)
+- [Riverpod docs](https://riverpod.dev/)

@@ -3,7 +3,7 @@ Program service with business logic.
 """
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
-from typing import List
+from typing import List, Optional
 from datetime import date, timedelta, datetime
 from app.models.program import (
     Program, ProgramTemplate, ProgramDayAccessories, TrainingMax, TrainingMaxHistory,
@@ -14,7 +14,7 @@ from app.models.user import User
 from app.schemas.program import (
     ProgramCreateRequest, ProgramResponse, ProgramDetailResponse,
     ProgramUpdateRequest, TrainingMaxResponse, AccessoriesUpdateRequest,
-    ProgramDayAccessoriesResponse
+    ProgramDayAccessoriesResponse, UpdateCycleTrainingMaxRequest, CycleTrainingMaxResponse
 )
 
 
@@ -205,7 +205,8 @@ class ProgramService:
                         "sets": acc.sets,
                         "reps": acc.reps,
                         "weight_type": "fixed",
-                        "circuit_group": acc.circuit_group
+                        "circuit_group": acc.circuit_group,
+                        "weight": acc.weight
                     }
                     for acc in accessories_data
                 ]
@@ -251,7 +252,8 @@ class ProgramService:
                         "sets": acc.sets,
                         "reps": acc.reps,
                         "weight_type": "fixed",
-                        "circuit_group": acc.circuit_group
+                        "circuit_group": acc.circuit_group,
+                        "weight": acc.weight
                     }
                     for acc in accessories_data
                 ]
@@ -290,7 +292,8 @@ class ProgramService:
                         "sets": acc.sets,
                         "reps": acc.reps,
                         "weight_type": "fixed",
-                        "circuit_group": acc.circuit_group
+                        "circuit_group": acc.circuit_group,
+                        "weight": acc.weight
                     }
                     for acc in accessories_data
                 ]
@@ -630,6 +633,7 @@ class ProgramService:
             end_date=program.end_date,
             target_cycles=program.target_cycles,
             status=program.status,
+            include_deload=bool(program.include_deload),
             training_days=program.training_days,
             current_cycle=current_cycle,
             current_week=current_week,
@@ -732,6 +736,31 @@ class ProgramService:
 
         # Update only provided fields
         update_dict = update_data.model_dump(exclude_unset=True)
+
+        # Handle include_deload separately: store as int and delete deload workouts if disabling
+        if 'include_deload' in update_dict:
+            new_include_deload = update_dict.pop('include_deload')
+            program.include_deload = 1 if new_include_deload else 0
+
+            if not new_include_deload:
+                # Delete all scheduled deload workouts for this program.
+                # Must delete workout_main_lifts first — the FK has no DB-level cascade,
+                # so a bulk DELETE on workouts alone raises a constraint violation.
+                deload_ids = [
+                    row.id for row in db.query(Workout.id).filter(
+                        Workout.program_id == program.id,
+                        Workout.week_type == WeekType.WEEK_4_DELOAD,
+                        Workout.status == WorkoutStatus.SCHEDULED
+                    ).all()
+                ]
+                if deload_ids:
+                    db.query(WorkoutMainLift).filter(
+                        WorkoutMainLift.workout_id.in_(deload_ids)
+                    ).delete(synchronize_session=False)
+                    db.query(Workout).filter(
+                        Workout.id.in_(deload_ids)
+                    ).delete(synchronize_session=False)
+
         for field, value in update_dict.items():
             setattr(program, field, value)
 
@@ -794,7 +823,8 @@ class ProgramService:
                 "exercise_id": acc.exercise_id,
                 "sets": acc.sets,
                 "reps": acc.reps,
-                "circuit_group": acc.circuit_group
+                "circuit_group": acc.circuit_group,
+                "weight": acc.weight
             }
             for acc in update_data.accessories
         ]
@@ -833,7 +863,8 @@ class ProgramService:
     def complete_cycle(
         db: Session,
         user: User,
-        program_id: str
+        program_id: str,
+        increments: Optional[dict] = None
     ) -> dict:
         """
         Complete current cycle and increase training maxes.
@@ -885,18 +916,19 @@ class ProgramService:
         # Determine next cycle number
         next_cycle = max(tm.cycle_number for tm in current_tms) + 1
 
-        # Standard progression increments per 5/3/1
-        increments = {
-            LiftType.PRESS: 5.0,          # Upper body: +5 lbs
-            LiftType.BENCH_PRESS: 5.0,    # Upper body: +5 lbs
-            LiftType.SQUAT: 10.0,         # Lower body: +10 lbs
-            LiftType.DEADLIFT: 10.0       # Lower body: +10 lbs
+        # Use provided increments or fall back to standard 5/3/1 progression
+        raw_increments = increments or {}
+        increments_by_lift = {
+            LiftType.PRESS: raw_increments.get('press', 5.0),
+            LiftType.BENCH_PRESS: raw_increments.get('bench_press', 5.0),
+            LiftType.SQUAT: raw_increments.get('squat', 10.0),
+            LiftType.DEADLIFT: raw_increments.get('deadlift', 10.0),
         }
 
         # Create new training maxes with increases
         new_tms = {}
         for lift_type, old_tm in latest_tms.items():
-            increment = increments[lift_type]
+            increment = increments_by_lift[lift_type]
             new_value = old_tm.value + increment
 
             # Create new training max record
@@ -968,10 +1000,10 @@ class ProgramService:
                 detail="Program not found"
             )
 
-        # Get latest cycle number
+        # Get the last workout of the current cycle by date
         latest_workout = db.query(Workout).filter(
             Workout.program_id == program.id
-        ).order_by(Workout.cycle_number.desc()).first()
+        ).order_by(Workout.cycle_number.desc(), Workout.scheduled_date.desc()).first()
 
         if not latest_workout:
             raise HTTPException(
@@ -993,9 +1025,21 @@ class ProgramService:
                 detail=f"No training maxes found for cycle {next_cycle}. Complete current cycle first."
             )
 
-        # Calculate start date for next cycle
-        # Cycles are 3 or 4 weeks depending on include_deload
-        start_date = latest_workout.scheduled_date + timedelta(days=7)
+        # Calculate start date for next cycle: the first training day of the calendar week
+        # following the last workout's week.  We must not start mid-week (e.g. on Saturday)
+        # because _generate_workouts iterates a 7-day window from start_date; if start_date
+        # falls after an earlier training day, that day would appear later in the window with
+        # its day_index out of chronological order, assigning lifts to the wrong dates.
+        last_date = latest_workout.scheduled_date
+        monday_of_next_week = last_date - timedelta(days=last_date.weekday()) + timedelta(weeks=1)
+        _day_to_weekday = {
+            'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
+            'friday': 4, 'saturday': 5, 'sunday': 6
+        }
+        first_training_day_offset = min(
+            _day_to_weekday[d] for d in program.training_days
+        )
+        start_date = monday_of_next_week + timedelta(days=first_training_day_offset)
 
         # Generate workouts for next cycle (3 or 4 weeks)
         workouts_created = ProgramService._generate_workouts(
@@ -1113,3 +1157,119 @@ class ProgramService:
             )
             for da in day_accessories
         ]
+
+    @staticmethod
+    def get_cycle_training_maxes(
+        db: Session,
+        user: User,
+        program_id: str,
+        cycle_number: int
+    ) -> CycleTrainingMaxResponse:
+        """Return the training maxes for a specific cycle."""
+        program = db.query(Program).filter(
+            Program.id == program_id,
+            Program.user_id == user.id
+        ).first()
+        if not program:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+
+        tms = db.query(TrainingMax).filter(
+            TrainingMax.program_id == program_id,
+            TrainingMax.cycle_number == cycle_number
+        ).all()
+
+        if not tms:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No training maxes found for cycle {cycle_number}"
+            )
+
+        values: dict = {tm.lift_type.value: tm.value for tm in tms}
+        return CycleTrainingMaxResponse(
+            cycle_number=cycle_number,
+            squat=values.get("squat"),
+            deadlift=values.get("deadlift"),
+            bench_press=values.get("bench_press"),
+            press=values.get("press"),
+        )
+
+    @staticmethod
+    def update_cycle_training_maxes(
+        db: Session,
+        user: User,
+        program_id: str,
+        cycle_number: int,
+        request: UpdateCycleTrainingMaxRequest
+    ) -> CycleTrainingMaxResponse:
+        """
+        Edit training maxes for a specific cycle and update the corresponding
+        scheduled workout snapshots so prescribed weights stay correct.
+        """
+        program = db.query(Program).filter(
+            Program.id == program_id,
+            Program.user_id == user.id
+        ).first()
+        if not program:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Program not found")
+
+        lift_map = {
+            "squat": LiftType.SQUAT,
+            "deadlift": LiftType.DEADLIFT,
+            "bench_press": LiftType.BENCH_PRESS,
+            "press": LiftType.PRESS,
+        }
+        updates = request.model_dump(exclude_none=True)
+
+        if not updates:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No values provided to update"
+            )
+
+        # Collect IDs of scheduled workouts for this cycle once (used for snapshot updates)
+        scheduled_workout_ids = [
+            row.id for row in db.query(Workout.id).filter(
+                Workout.program_id == program_id,
+                Workout.cycle_number == cycle_number,
+                Workout.status == WorkoutStatus.SCHEDULED
+            ).all()
+        ]
+
+        for lift_key, new_value in updates.items():
+            lift_type = lift_map[lift_key]
+
+            tm = db.query(TrainingMax).filter(
+                TrainingMax.program_id == program_id,
+                TrainingMax.lift_type == lift_type,
+                TrainingMax.cycle_number == cycle_number
+            ).first()
+
+            if not tm:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"No training max found for {lift_key} in cycle {cycle_number}"
+                )
+
+            old_value = tm.value
+            tm.value = new_value
+            tm.effective_date = date.today()
+
+            db.add(TrainingMaxHistory(
+                program_id=program_id,
+                lift_type=lift_type,
+                old_value=old_value,
+                new_value=new_value,
+                change_date=datetime.utcnow(),
+                reason=TrainingMaxReason.MANUAL,
+                notes=f"Manually edited for cycle {cycle_number}"
+            ))
+
+            # Update snapshot on all scheduled workouts for this lift/cycle
+            if scheduled_workout_ids:
+                db.query(WorkoutMainLift).filter(
+                    WorkoutMainLift.workout_id.in_(scheduled_workout_ids),
+                    WorkoutMainLift.lift_type == lift_type
+                ).update({"current_training_max": new_value}, synchronize_session=False)
+
+        db.commit()
+        return ProgramService.get_cycle_training_maxes(db, user, program_id, cycle_number)

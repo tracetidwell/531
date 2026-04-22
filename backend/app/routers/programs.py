@@ -1,7 +1,7 @@
 """
 Program management API endpoints.
 """
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Body, Depends, status
 from sqlalchemy.orm import Session
 from typing import List
 from app.database import get_db
@@ -11,7 +11,10 @@ from app.schemas.program import (
     ProgramDetailResponse,
     ProgramUpdateRequest,
     AccessoriesUpdateRequest,
-    ProgramDayAccessoriesResponse
+    ProgramDayAccessoriesResponse,
+    CompleteCycleRequest,
+    UpdateCycleTrainingMaxRequest,
+    CycleTrainingMaxResponse,
 )
 from app.services.program import ProgramService
 from app.models.user import User
@@ -71,30 +74,6 @@ async def list_programs(
 
 
 @router.get(
-    "/{program_id}",
-    response_model=ProgramDetailResponse,
-    status_code=status.HTTP_200_OK,
-    summary="Get program details",
-    description="Get detailed information about a specific program."
-)
-async def get_program(
-    program_id: str,
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-) -> ProgramDetailResponse:
-    """
-    Get detailed program information.
-
-    Returns:
-    - Program details (name, dates, status)
-    - Current training maxes for all lifts
-    - Current cycle and week
-    - Number of workouts generated
-    """
-    return ProgramService.get_program_detail(db, current_user, program_id)
-
-
-@router.get(
     "/{program_id}/templates",
     response_model=List[dict],
     status_code=status.HTTP_200_OK,
@@ -142,6 +121,30 @@ async def get_program_day_accessories(
     - accessories: List of accessory exercises
     """
     return ProgramService.get_program_day_accessories(db, current_user, program_id)
+
+
+@router.get(
+    "/{program_id}",
+    response_model=ProgramDetailResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get program details",
+    description="Get detailed information about a specific program."
+)
+async def get_program(
+    program_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> ProgramDetailResponse:
+    """
+    Get detailed program information.
+
+    Returns:
+    - Program details (name, dates, status)
+    - Current training maxes for all lifts
+    - Current cycle and week
+    - Number of workouts generated
+    """
+    return ProgramService.get_program_detail(db, current_user, program_id)
 
 
 @router.put(
@@ -201,6 +204,7 @@ async def update_accessories(
 )
 async def complete_cycle(
     program_id: str,
+    request: CompleteCycleRequest = Body(default_factory=CompleteCycleRequest),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ) -> dict:
@@ -210,6 +214,8 @@ async def complete_cycle(
     Per Jim Wendler's 5/3/1 methodology:
     - Upper body lifts (Press, Bench Press): +5 lbs
     - Lower body lifts (Squat, Deadlift): +10 lbs
+
+    Optionally supply custom increments in the request body to override defaults.
 
     This endpoint:
     - Creates new TrainingMax records for the next cycle
@@ -235,7 +241,13 @@ async def complete_cycle(
     }
     ```
     """
-    return ProgramService.complete_cycle(db, current_user, program_id)
+    increments = {
+        'press': request.press_increment,
+        'bench_press': request.bench_press_increment,
+        'squat': request.squat_increment,
+        'deadlift': request.deadlift_increment,
+    }
+    return ProgramService.complete_cycle(db, current_user, program_id, increments)
 
 
 @router.post(
@@ -298,3 +310,39 @@ async def delete_program(
     This action cannot be undone.
     """
     ProgramService.delete_program(db, current_user, program_id)
+
+
+@router.get(
+    "/{program_id}/cycles/{cycle_number}/training-maxes",
+    response_model=CycleTrainingMaxResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Get training maxes for a cycle",
+    description="Get the training max values for each lift in a specific cycle."
+)
+async def get_cycle_training_maxes(
+    program_id: str,
+    cycle_number: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> CycleTrainingMaxResponse:
+    return ProgramService.get_cycle_training_maxes(db, current_user, program_id, cycle_number)
+
+
+@router.put(
+    "/{program_id}/cycles/{cycle_number}/training-maxes",
+    response_model=CycleTrainingMaxResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Edit training maxes for a cycle",
+    description="Update training max values for one or more lifts in a specific cycle. "
+                "Updates the snapshot on all scheduled workouts in that cycle so prescribed weights stay correct."
+)
+async def update_cycle_training_maxes(
+    program_id: str,
+    cycle_number: int,
+    request: UpdateCycleTrainingMaxRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> CycleTrainingMaxResponse:
+    return ProgramService.update_cycle_training_maxes(
+        db, current_user, program_id, cycle_number, request
+    )

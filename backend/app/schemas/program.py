@@ -26,6 +26,14 @@ class TrainingMaxInput(BaseModel):
         }
 
 
+class CompleteCycleRequest(BaseModel):
+    """Optional overrides for training max increments."""
+    press_increment: float = Field(default=5.0, ge=0, description="Press increment in lbs")
+    bench_press_increment: float = Field(default=5.0, ge=0, description="Bench Press increment in lbs")
+    squat_increment: float = Field(default=10.0, ge=0, description="Squat increment in lbs")
+    deadlift_increment: float = Field(default=10.0, ge=0, description="Deadlift increment in lbs")
+
+
 class AccessoryExerciseInput(BaseModel):
     """Schema for an accessory exercise in a program."""
 
@@ -37,6 +45,11 @@ class AccessoryExerciseInput(BaseModel):
         ge=1,
         description="Circuit group number (exercises with same number are done as a circuit). None = standalone exercise."
     )
+    weight: Optional[float] = Field(
+        default=None,
+        ge=0,
+        description="Prescribed weight for the exercise"
+    )
 
     class Config:
         json_schema_extra = {
@@ -44,7 +57,8 @@ class AccessoryExerciseInput(BaseModel):
                 "exercise_id": "uuid-here",
                 "sets": 5,
                 "reps": 12,
-                "circuit_group": 1
+                "circuit_group": 1,
+                "weight": 135.0
             }
         }
 
@@ -192,6 +206,7 @@ class ProgramResponse(BaseModel):
     start_date: date = Field(..., description="Start date")
     end_date: Optional[date] = Field(None, description="End date")
     status: ProgramStatus = Field(..., description="Program status")
+    include_deload: bool = Field(default=True, description="Whether deload week is included")
     training_days: List[str] = Field(..., description="Training days")
     created_at: datetime = Field(..., description="Creation timestamp")
 
@@ -205,6 +220,7 @@ class ProgramResponse(BaseModel):
                 "start_date": "2025-01-01",
                 "end_date": None,
                 "status": "active",
+                "include_deload": True,
                 "training_days": ["monday", "tuesday", "thursday", "saturday"],
                 "created_at": "2025-01-01T10:00:00"
             }
@@ -221,6 +237,7 @@ class ProgramDetailResponse(BaseModel):
     end_date: Optional[date] = Field(None, description="End date")
     target_cycles: Optional[int] = Field(None, description="Number of cycles to run")
     status: ProgramStatus = Field(..., description="Program status")
+    include_deload: bool = Field(default=True, description="Whether deload week is included")
     training_days: List[str] = Field(..., description="Training days")
     current_cycle: int = Field(default=1, description="Current cycle number")
     current_week: int = Field(default=1, description="Current week number")
@@ -260,6 +277,7 @@ class ProgramUpdateRequest(BaseModel):
     status: Optional[ProgramStatus] = Field(None, description="Program status")
     end_date: Optional[date] = Field(None, description="End date")
     target_cycles: Optional[int] = Field(None, ge=1, le=52, description="Number of cycles to run")
+    include_deload: Optional[bool] = Field(None, description="Include deload week in each cycle. Setting to false deletes scheduled deload workouts.")
 
     class Config:
         json_schema_extra = {
@@ -289,6 +307,25 @@ class AccessoriesUpdateRequest(BaseModel):
                 ]
             }
         }
+
+
+class UpdateCycleTrainingMaxRequest(BaseModel):
+    """Request body for editing training maxes for a specific cycle."""
+
+    squat: Optional[float] = Field(None, gt=0, description="New training max for squat")
+    deadlift: Optional[float] = Field(None, gt=0, description="New training max for deadlift")
+    bench_press: Optional[float] = Field(None, gt=0, description="New training max for bench press")
+    press: Optional[float] = Field(None, gt=0, description="New training max for overhead press")
+
+
+class CycleTrainingMaxResponse(BaseModel):
+    """Training max values for a single cycle."""
+
+    cycle_number: int = Field(..., description="Cycle number")
+    squat: Optional[float] = Field(None, description="Training max for squat")
+    deadlift: Optional[float] = Field(None, description="Training max for deadlift")
+    bench_press: Optional[float] = Field(None, description="Training max for bench press")
+    press: Optional[float] = Field(None, description="Training max for overhead press")
 
 
 class ProgramDayAccessoriesResponse(BaseModel):

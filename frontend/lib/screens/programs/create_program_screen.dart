@@ -332,6 +332,21 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showCyclesPicker(),
         ),
+        if (_templateType != '3_day') ...[
+          const Divider(),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: const Icon(Icons.hotel),
+            title: const Text('Include Deload Week'),
+            subtitle: Text(
+              _includeDeload
+                  ? 'Week 4 of each cycle is a deload (4-week cycles)'
+                  : 'Skip deload — train hard every week (3-week cycles)',
+            ),
+            value: _includeDeload,
+            onChanged: (value) => setState(() => _includeDeload = value),
+          ),
+        ],
       ],
     );
   }

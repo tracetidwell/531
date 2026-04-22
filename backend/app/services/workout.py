@@ -339,7 +339,7 @@ class WorkoutService:
                         set_type="accessory",
                         set_number=set_num,
                         prescribed_reps=acc["reps"],
-                        prescribed_weight=None,  # User determines weight for accessories
+                        prescribed_weight=acc.get("weight"),
                         percentage_of_tm=None,
                         exercise_id=acc.get("exercise_id"),
                         circuit_group=acc.get("circuit_group")  # For circuit training
@@ -412,14 +412,14 @@ class WorkoutService:
 
         # Accessory sets
         elif set_type == "accessory":
-            # Try to get prescribed reps from day accessories
+            # Try to get prescribed reps and weight from day accessories
             if day_accessories:
                 # Find the accessory exercise in the day accessories
                 for acc in day_accessories:
                     if acc.get("exercise_id") == set_log.exercise_id:
                         result["prescribed_reps"] = acc.get("reps")
+                        result["prescribed_weight"] = acc.get("weight")
                         break
-            # Weight is user-determined for accessories (no prescribed weight)
 
         return result
 
