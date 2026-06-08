@@ -1330,7 +1330,7 @@ class _WorkoutLoggingScreenState extends ConsumerState<WorkoutLoggingScreen>
           ),
           const SizedBox(height: 32),
 
-          // Target reps (no weight prescribed for accessories)
+          // Target reps and optional prescribed accessory weight
           Container(
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(

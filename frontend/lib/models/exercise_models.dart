@@ -94,9 +94,7 @@ class Exercise {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is Exercise &&
-          runtimeType == other.runtimeType &&
-          id == other.id;
+      other is Exercise && runtimeType == other.runtimeType && id == other.id;
 
   @override
   int get hashCode => id.hashCode;
@@ -132,21 +130,24 @@ class AccessoryExerciseDetail {
   final int sets;
   final int reps;
   final int? circuitGroup; // null = standalone, 1+ = circuit group number
+  final double? weight;
 
   AccessoryExerciseDetail({
     required this.exercise,
     required this.sets,
     required this.reps,
     this.circuitGroup,
+    this.weight,
   });
 
-  /// Create simple reference for API (just ID, sets, reps, circuit_group)
+  /// Create simple reference for API (just ID, sets, reps, circuit_group, weight)
   Map<String, dynamic> toApiJson() {
     return {
       'exercise_id': exercise.id,
       'sets': sets,
       'reps': reps,
       if (circuitGroup != null) 'circuit_group': circuitGroup,
+      if (weight != null) 'weight': weight,
     };
   }
 
@@ -155,17 +156,21 @@ class AccessoryExerciseDetail {
     int? sets,
     int? reps,
     int? circuitGroup,
+    double? weight,
     bool clearCircuitGroup = false,
+    bool clearWeight = false,
   }) {
     return AccessoryExerciseDetail(
       exercise: exercise ?? this.exercise,
       sets: sets ?? this.sets,
       reps: reps ?? this.reps,
-      circuitGroup: clearCircuitGroup ? null : (circuitGroup ?? this.circuitGroup),
+      circuitGroup:
+          clearCircuitGroup ? null : (circuitGroup ?? this.circuitGroup),
+      weight: clearWeight ? null : (weight ?? this.weight),
     );
   }
 
   @override
   String toString() =>
-      'AccessoryExerciseDetail(${exercise.name}, $sets×$reps${circuitGroup != null ? ', circuit $circuitGroup' : ''})';
+      'AccessoryExerciseDetail(${exercise.name}, $sets×$reps${weight != null ? ', $weight lbs' : ''}${circuitGroup != null ? ', circuit $circuitGroup' : ''})';
 }

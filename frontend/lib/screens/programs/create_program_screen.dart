@@ -10,7 +10,8 @@ class CreateProgramScreen extends ConsumerStatefulWidget {
   const CreateProgramScreen({super.key});
 
   @override
-  ConsumerState<CreateProgramScreen> createState() => _CreateProgramScreenState();
+  ConsumerState<CreateProgramScreen> createState() =>
+      _CreateProgramScreenState();
 }
 
 class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
@@ -71,7 +72,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
     // Calculate end date from target cycles if not set
     if (newEnd == null && _targetCycles != null) {
       final weeksPerCycle = _getWeeksPerCycle();
-      newEnd = _startDate.add(Duration(days: 7 * weeksPerCycle * _targetCycles!));
+      newEnd =
+          _startDate.add(Duration(days: 7 * weeksPerCycle * _targetCycles!));
     }
 
     for (final existing in programs) {
@@ -79,31 +81,32 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
       // Calculate end date from target cycles if not set
       if (existingEnd == null && existing.targetCycles != null) {
         final existingWeeksPerCycle = getWeeksPerCycleForProgram(
-          existing.templateType,
-          existing.includeDeload
-        );
-        existingEnd = existing.startDate.add(Duration(days: 7 * existingWeeksPerCycle * existing.targetCycles!));
+            existing.templateType, existing.includeDeload);
+        existingEnd = existing.startDate.add(
+            Duration(days: 7 * existingWeeksPerCycle * existing.targetCycles!));
       }
 
       bool hasOverlap = false;
 
       if (newEnd != null && existingEnd != null) {
         // Both have end dates
-        hasOverlap = _startDate.isBefore(existingEnd.add(const Duration(days: 1))) &&
-                     existing.startDate.isBefore(newEnd.add(const Duration(days: 1)));
+        hasOverlap = _startDate
+                .isBefore(existingEnd.add(const Duration(days: 1))) &&
+            existing.startDate.isBefore(newEnd.add(const Duration(days: 1)));
       } else if (newEnd != null && existingEnd == null) {
         // New has end, existing is open-ended
         hasOverlap = _startDate.isAfter(existing.startDate) ||
-                     _startDate.isAtSameMomentAs(existing.startDate) ||
-                     newEnd.isAfter(existing.startDate) ||
-                     newEnd.isAtSameMomentAs(existing.startDate);
+            _startDate.isAtSameMomentAs(existing.startDate) ||
+            newEnd.isAfter(existing.startDate) ||
+            newEnd.isAtSameMomentAs(existing.startDate);
       } else if (newEnd == null && existingEnd != null) {
         // New is open-ended, existing has end
-        hasOverlap = _startDate.isBefore(existingEnd.add(const Duration(days: 1)));
+        hasOverlap =
+            _startDate.isBefore(existingEnd.add(const Duration(days: 1)));
       } else {
         // Both are open-ended
         hasOverlap = _startDate.isAfter(existing.startDate) ||
-                     _startDate.isAtSameMomentAs(existing.startDate);
+            _startDate.isAtSameMomentAs(existing.startDate);
       }
 
       if (hasOverlap) {
@@ -304,7 +307,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.warning_amber, color: Colors.orange.shade700, size: 20),
+                Icon(Icons.warning_amber,
+                    color: Colors.orange.shade700, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -325,9 +329,7 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
           leading: const Icon(Icons.repeat),
           title: const Text('Duration (Optional)'),
           subtitle: Text(
-            _targetCycles != null
-                ? '$_targetCycles cycles'
-                : 'No end date',
+            _targetCycles != null ? '$_targetCycles cycles' : 'No end date',
           ),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => _showCyclesPicker(),
@@ -370,7 +372,7 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
       case '2_day':
         return 2;
       case '3_day':
-        return 4;  // Changed: 3-day has 4 workout types
+        return 4; // Changed: 3-day has 4 workout types
       case '4_day':
       default:
         return 4;
@@ -580,7 +582,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
     );
   }
 
-  Widget _buildWorkoutTypeAccessories(String workoutNumber, String workoutDisplayName) {
+  Widget _buildWorkoutTypeAccessories(
+      String workoutNumber, String workoutDisplayName) {
     final accessories = _accessories[workoutNumber] ?? [];
 
     // For 2-day programs: 2 main lifts per workout, so allow 2-6 accessories
@@ -658,7 +661,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
               // Show standalone exercises first
               if (standaloneExercises.isNotEmpty) ...[
                 ...standaloneExercises.map((entry) {
-                  return _buildAccessoryItem(workoutNumber, entry.key, entry.value);
+                  return _buildAccessoryItem(
+                      workoutNumber, entry.key, entry.value);
                 }),
               ],
 
@@ -669,7 +673,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
                     .entries
                     .where((e) => e.value.circuitGroup == circuitNum)
                     .toList();
-                return _buildCircuitCard(workoutNumber, circuitNum, circuitExercises);
+                return _buildCircuitCard(
+                    workoutNumber, circuitNum, circuitExercises);
               }),
             ],
           ],
@@ -725,7 +730,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.orange.shade100,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(10)),
             ),
             child: Row(
               children: [
@@ -740,18 +746,23 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
                 ),
                 const Spacer(),
                 TextButton.icon(
-                  icon: Icon(Icons.add, size: 16, color: Colors.orange.shade800),
+                  icon:
+                      Icon(Icons.add, size: 16, color: Colors.orange.shade800),
                   label: Text(
                     'Add to Circuit',
-                    style: TextStyle(color: Colors.orange.shade800, fontSize: 12),
+                    style:
+                        TextStyle(color: Colors.orange.shade800, fontSize: 12),
                   ),
-                  onPressed: () => _addExerciseToCircuit(workoutNumber, circuitNum),
+                  onPressed: () =>
+                      _addExerciseToCircuit(workoutNumber, circuitNum),
                 ),
                 IconButton(
-                  icon: Icon(Icons.delete_outline, size: 18, color: Colors.orange.shade800),
+                  icon: Icon(Icons.delete_outline,
+                      size: 18, color: Colors.orange.shade800),
                   onPressed: () => _deleteCircuit(workoutNumber, circuitNum),
                   tooltip: 'Delete Circuit',
-                  constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                  constraints:
+                      const BoxConstraints(minWidth: 32, minHeight: 32),
                   padding: EdgeInsets.zero,
                 ),
               ],
@@ -762,7 +773,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
             padding: const EdgeInsets.all(8),
             child: Column(
               children: circuitExercises.map((entry) {
-                return _buildCircuitExerciseItem(workoutNumber, entry.key, entry.value, circuitNum);
+                return _buildCircuitExerciseItem(
+                    workoutNumber, entry.key, entry.value, circuitNum);
               }).toList(),
             ),
           ),
@@ -790,14 +802,17 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
             style: TextStyle(fontSize: 12, color: Colors.orange.shade900),
           ),
         ),
-        title: Text(accessory.exercise.name, style: const TextStyle(fontSize: 14)),
-        subtitle: Text('${accessory.sets} × ${accessory.reps}', style: const TextStyle(fontSize: 12)),
+        title:
+            Text(accessory.exercise.name, style: const TextStyle(fontSize: 14)),
+        subtitle: Text('${accessory.sets} × ${accessory.reps}',
+            style: const TextStyle(fontSize: 12)),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             IconButton(
               icon: const Icon(Icons.edit, size: 18),
-              onPressed: () => _editAccessoryExercise(workoutNumber, index, accessory),
+              onPressed: () =>
+                  _editAccessoryExercise(workoutNumber, index, accessory),
               constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
               padding: EdgeInsets.zero,
             ),
@@ -814,7 +829,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
     );
   }
 
-  Future<void> _addExerciseToCircuit(String workoutNumber, int circuitNum) async {
+  Future<void> _addExerciseToCircuit(
+      String workoutNumber, int circuitNum) async {
     final exercise = await showDialog<Exercise>(
       context: context,
       builder: (context) => const ExerciseSelectorDialog(),
@@ -840,7 +856,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
   void _deleteCircuit(String workoutNumber, int circuitNum) {
     setState(() {
       // Remove all exercises in this circuit
-      _accessories[workoutNumber]?.removeWhere((a) => a.circuitGroup == circuitNum);
+      _accessories[workoutNumber]
+          ?.removeWhere((a) => a.circuitGroup == circuitNum);
     });
   }
 
@@ -849,7 +866,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
       // Make the exercise standalone (remove from circuit)
       final accessory = _accessories[workoutNumber]?[index];
       if (accessory != null) {
-        _accessories[workoutNumber]?[index] = accessory.copyWith(clearCircuitGroup: true);
+        _accessories[workoutNumber]?[index] =
+            accessory.copyWith(clearCircuitGroup: true);
       }
     });
   }
@@ -873,7 +891,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.edit, size: 20),
-              onPressed: () => _editAccessoryExercise(workoutNumber, index, accessory),
+              onPressed: () =>
+                  _editAccessoryExercise(workoutNumber, index, accessory),
             ),
             IconButton(
               icon: const Icon(Icons.delete, size: 20),
@@ -943,7 +962,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
                     color: Colors.orange.shade50,
                     borderRadius: BorderRadius.circular(8),
@@ -952,11 +972,14 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.repeat, size: 16, color: Colors.orange.shade700),
+                      Icon(Icons.repeat,
+                          size: 16, color: Colors.orange.shade700),
                       const SizedBox(width: 8),
                       Text(
                         'Circuit ${current.circuitGroup}',
-                        style: TextStyle(color: Colors.orange.shade700, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            color: Colors.orange.shade700,
+                            fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
@@ -1006,7 +1029,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
     DateTime? calculatedEndDate = _endDate;
     if (calculatedEndDate == null && _targetCycles != null) {
       final weeksPerCycle = _getWeeksPerCycle();
-      calculatedEndDate = _startDate.add(Duration(days: 7 * weeksPerCycle * _targetCycles!));
+      calculatedEndDate =
+          _startDate.add(Duration(days: 7 * weeksPerCycle * _targetCycles!));
     }
 
     return Column(
@@ -1071,8 +1095,10 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
                 ),
                 const SizedBox(height: 12),
                 _buildReviewItem('Press', '${_trainingMaxes['press']} lbs'),
-                _buildReviewItem('Deadlift', '${_trainingMaxes['deadlift']} lbs'),
-                _buildReviewItem('Bench Press', '${_trainingMaxes['bench_press']} lbs'),
+                _buildReviewItem(
+                    'Deadlift', '${_trainingMaxes['deadlift']} lbs'),
+                _buildReviewItem(
+                    'Bench Press', '${_trainingMaxes['bench_press']} lbs'),
                 _buildReviewItem('Squat', '${_trainingMaxes['squat']} lbs'),
               ],
             ),
@@ -1112,7 +1138,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
   }
 
   // Static helper to calculate weeks per cycle for any program
-  static int getWeeksPerCycleForProgram(String templateType, bool includeDeload) {
+  static int getWeeksPerCycleForProgram(
+      String templateType, bool includeDeload) {
     if (templateType == '3_day') {
       return 5;
     }
@@ -1178,7 +1205,9 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
       final requiredDays = _getRequiredDays();
       if (_selectedDays.length != requiredDays) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Please select exactly $requiredDays training days')),
+          SnackBar(
+              content:
+                  Text('Please select exactly $requiredDays training days')),
         );
         return;
       }
@@ -1219,7 +1248,8 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
       if (calculatedEndDate == null && _targetCycles != null) {
         // Calculate weeks based on template type (3-day uses 5 weeks, others use 3-4)
         final weeksPerCycle = _getWeeksPerCycle();
-        calculatedEndDate = _startDate.add(Duration(days: 7 * weeksPerCycle * _targetCycles!));
+        calculatedEndDate =
+            _startDate.add(Duration(days: 7 * weeksPerCycle * _targetCycles!));
       }
 
       // Convert accessories to API format (exercise_id, sets, reps, circuit_group)
@@ -1235,6 +1265,7 @@ class _CreateProgramScreenState extends ConsumerState<CreateProgramScreen> {
                   sets: detail.sets,
                   reps: detail.reps,
                   circuitGroup: detail.circuitGroup,
+                  weight: detail.weight,
                 ))
             .toList();
       }

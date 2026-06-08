@@ -287,6 +287,32 @@ async def generate_next_cycle(
     return ProgramService.generate_next_cycle(db, current_user, program_id)
 
 
+@router.post(
+    "/{program_id}/reschedule-current-cycle",
+    status_code=status.HTTP_200_OK,
+    summary="Reschedule current cycle",
+    description="Shift all remaining scheduled workouts in the current cycle to start from the next available training day."
+)
+async def reschedule_current_cycle(
+    program_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+) -> dict:
+    """
+    Reschedule remaining workouts in the current cycle starting from today.
+
+    Use this when workouts have fallen behind schedule and are now in the past.
+    Completed and skipped workouts are left untouched; only SCHEDULED workouts
+    are shifted forward.
+
+    Returns:
+    - cycle_number: The current cycle number
+    - workouts_rescheduled: Number of workouts that were rescheduled
+    - new_start_date: The date the rescheduled workouts begin
+    """
+    return ProgramService.reschedule_current_cycle(db, current_user, program_id)
+
+
 @router.delete(
     "/{program_id}",
     status_code=status.HTTP_204_NO_CONTENT,

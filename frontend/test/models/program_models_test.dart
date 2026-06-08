@@ -27,7 +27,8 @@ void main() {
       expect(program.endDate, equals(DateTime.parse('2024-06-01')));
       expect(program.targetCycles, equals(6));
       expect(program.includeDeload, isTrue);
-      expect(program.trainingDays, equals(['monday', 'tuesday', 'thursday', 'friday']));
+      expect(program.trainingDays,
+          equals(['monday', 'tuesday', 'thursday', 'friday']));
       expect(program.status, equals('ACTIVE'));
       expect(program.currentCycle, equals(2));
     });
@@ -100,15 +101,18 @@ void main() {
 
     test('displayTemplateType returns formatted names', () {
       expect(
-        Program.fromJson({...sampleJson, 'template_type': '4_day'}).displayTemplateType,
+        Program.fromJson({...sampleJson, 'template_type': '4_day'})
+            .displayTemplateType,
         equals('4-Day Program'),
       );
       expect(
-        Program.fromJson({...sampleJson, 'template_type': '3_day'}).displayTemplateType,
+        Program.fromJson({...sampleJson, 'template_type': '3_day'})
+            .displayTemplateType,
         equals('3-Day Program'),
       );
       expect(
-        Program.fromJson({...sampleJson, 'template_type': '2_day'}).displayTemplateType,
+        Program.fromJson({...sampleJson, 'template_type': '2_day'})
+            .displayTemplateType,
         equals('2-Day Program'),
       );
     });
@@ -185,7 +189,8 @@ void main() {
         accessories: {
           'monday': [
             AccessoryExercise(exerciseId: 'ex-1', sets: 3, reps: 10),
-            AccessoryExercise(exerciseId: 'ex-2', sets: 3, reps: 12, circuitGroup: 1),
+            AccessoryExercise(
+                exerciseId: 'ex-2', sets: 3, reps: 12, circuitGroup: 1),
           ],
         },
       );
@@ -225,6 +230,19 @@ void main() {
       final json = exercise.toJson();
 
       expect(json['circuit_group'], equals(1));
+    });
+
+    test('toJson includes weight when provided', () {
+      final exercise = AccessoryExercise(
+        exerciseId: 'exercise-123',
+        sets: 3,
+        reps: 10,
+        weight: 95.5,
+      );
+
+      final json = exercise.toJson();
+
+      expect(json['weight'], equals(95.5));
     });
   });
 
@@ -272,8 +290,16 @@ void main() {
       'current_week': 3,
       'training_maxes': {
         'squat': {'value': 250.0, 'effective_date': '2024-01-01', 'cycle': 1},
-        'deadlift': {'value': 300.0, 'effective_date': '2024-01-01', 'cycle': 1},
-        'bench_press': {'value': 200.0, 'effective_date': '2024-01-01', 'cycle': 1},
+        'deadlift': {
+          'value': 300.0,
+          'effective_date': '2024-01-01',
+          'cycle': 1
+        },
+        'bench_press': {
+          'value': 200.0,
+          'effective_date': '2024-01-01',
+          'cycle': 1
+        },
         'press': {'value': 100.0, 'effective_date': '2024-01-01', 'cycle': 1},
       },
       'workouts_generated': 16,
@@ -304,15 +330,18 @@ void main() {
 
     test('displayStatus returns formatted names', () {
       expect(
-        ProgramDetail.fromJson({...sampleDetailJson, 'status': 'ACTIVE'}).displayStatus,
+        ProgramDetail.fromJson({...sampleDetailJson, 'status': 'ACTIVE'})
+            .displayStatus,
         equals('Active'),
       );
       expect(
-        ProgramDetail.fromJson({...sampleDetailJson, 'status': 'COMPLETED'}).displayStatus,
+        ProgramDetail.fromJson({...sampleDetailJson, 'status': 'COMPLETED'})
+            .displayStatus,
         equals('Completed'),
       );
       expect(
-        ProgramDetail.fromJson({...sampleDetailJson, 'status': 'PAUSED'}).displayStatus,
+        ProgramDetail.fromJson({...sampleDetailJson, 'status': 'PAUSED'})
+            .displayStatus,
         equals('Paused'),
       );
     });

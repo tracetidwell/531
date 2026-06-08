@@ -1030,7 +1030,7 @@ class ProgramService:
         # because _generate_workouts iterates a 7-day window from start_date; if start_date
         # falls after an earlier training day, that day would appear later in the window with
         # its day_index out of chronological order, assigning lifts to the wrong dates.
-        last_date = latest_workout.scheduled_date
+        last_date = max(latest_workout.scheduled_date, date.today())
         monday_of_next_week = last_date - timedelta(days=last_date.weekday()) + timedelta(weeks=1)
         _day_to_weekday = {
             'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
@@ -1055,6 +1055,76 @@ class ProgramService:
             "cycle_number": next_cycle,
             "start_date": start_date,
             "workouts_generated": workouts_created
+        }
+
+    @staticmethod
+    def reschedule_current_cycle(
+        db: Session,
+        user: User,
+        program_id: str
+    ) -> dict:
+        program = db.query(Program).filter(
+            Program.id == program_id,
+            Program.user_id == user.id
+        ).first()
+
+        if not program:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Program not found"
+            )
+
+        # Find the current cycle number
+        latest_workout = db.query(Workout).filter(
+            Workout.program_id == program.id
+        ).order_by(Workout.cycle_number.desc()).first()
+
+        if not latest_workout:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No workouts found for this program."
+            )
+
+        current_cycle = latest_workout.cycle_number
+
+        # Get all unfinished workouts in the current cycle
+        pending = db.query(Workout).filter(
+            Workout.program_id == program.id,
+            Workout.cycle_number == current_cycle,
+            Workout.status == WorkoutStatus.SCHEDULED
+        ).order_by(Workout.scheduled_date.asc()).all()
+
+        if not pending:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"No scheduled workouts found in cycle {current_cycle}."
+            )
+
+        # Find the first available training day on or after today
+        _day_to_weekday = {
+            'monday': 0, 'tuesday': 1, 'wednesday': 2, 'thursday': 3,
+            'friday': 4, 'saturday': 5, 'sunday': 6
+        }
+        today = date.today()
+        monday_of_current_week = today - timedelta(days=today.weekday())
+        first_training_day_offset = min(
+            _day_to_weekday[d] for d in program.training_days
+        )
+        new_first_date = monday_of_current_week + timedelta(days=first_training_day_offset)
+        if new_first_date < today:
+            new_first_date = monday_of_current_week + timedelta(weeks=1, days=first_training_day_offset)
+
+        shift = new_first_date - pending[0].scheduled_date
+
+        for workout in pending:
+            workout.scheduled_date = workout.scheduled_date + shift
+
+        db.commit()
+
+        return {
+            "cycle_number": current_cycle,
+            "workouts_rescheduled": len(pending),
+            "new_start_date": new_first_date
         }
 
     @staticmethod

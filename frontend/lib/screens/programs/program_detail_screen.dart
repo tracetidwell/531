@@ -114,7 +114,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
 
   Future<void> _showEditEndDateDialog() async {
     final program = _programDetail!;
-    final initialDate = program.endDate ?? DateTime.now().add(const Duration(days: 30));
+    final initialDate =
+        program.endDate ?? DateTime.now().add(const Duration(days: 30));
 
     final selectedDate = await showDatePicker(
       context: context,
@@ -167,7 +168,9 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                   Navigator.pop(context, value);
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Please enter a number between 1 and 52')),
+                    const SnackBar(
+                        content:
+                            Text('Please enter a number between 1 and 52')),
                   );
                 }
               }
@@ -229,13 +232,13 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
       barrierDismissible: false,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) {
-
           Widget incrementField(
             String label,
             double value,
             void Function(double) onChanged,
           ) {
-            final controller = TextEditingController(text: value.toStringAsFixed(0));
+            final controller =
+                TextEditingController(text: value.toStringAsFixed(0));
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
               child: Row(
@@ -248,12 +251,14 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                     flex: 2,
                     child: TextField(
                       controller: controller,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
                       decoration: const InputDecoration(
                         suffixText: 'lbs',
                         isDense: true,
                         border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                        contentPadding:
+                            EdgeInsets.symmetric(horizontal: 8, vertical: 8),
                       ),
                       onChanged: (v) {
                         final parsed = double.tryParse(v);
@@ -277,10 +282,14 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                     'Your training maxes will increase for the next cycle. Adjust the increments below if desired.',
                   ),
                   const SizedBox(height: 16),
-                  incrementField('Press', pressIncrement, (v) => setDialogState(() => pressIncrement = v)),
-                  incrementField('Bench Press', benchIncrement, (v) => setDialogState(() => benchIncrement = v)),
-                  incrementField('Squat', squatIncrement, (v) => setDialogState(() => squatIncrement = v)),
-                  incrementField('Deadlift', deadliftIncrement, (v) => setDialogState(() => deadliftIncrement = v)),
+                  incrementField('Press', pressIncrement,
+                      (v) => setDialogState(() => pressIncrement = v)),
+                  incrementField('Bench Press', benchIncrement,
+                      (v) => setDialogState(() => benchIncrement = v)),
+                  incrementField('Squat', squatIncrement,
+                      (v) => setDialogState(() => squatIncrement = v)),
+                  incrementField('Deadlift', deadliftIncrement,
+                      (v) => setDialogState(() => deadliftIncrement = v)),
                 ],
               ),
             ),
@@ -309,7 +318,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                content: Text('Cycle ${cycleNumber + 1} started!'),
+                                content:
+                                    Text('Cycle ${cycleNumber + 1} started!'),
                                 backgroundColor: Colors.green,
                               ),
                             );
@@ -331,7 +341,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                     ? const SizedBox(
                         width: 18,
                         height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
                       )
                     : const Text('Start Next Cycle'),
               ),
@@ -544,7 +555,7 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                           exerciseName,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        subtitle: Text('${acc['sets']} sets x ${acc['reps']} reps'),
+                        subtitle: Text(_formatAccessoryPrescription(acc)),
                         trailing: IconButton(
                           icon: const Icon(Icons.edit, size: 20),
                           onPressed: () => _showEditAccessoryDialog(
@@ -565,14 +576,45 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
     );
   }
 
+  String _formatAccessoryPrescription(Map<String, dynamic> accessory) {
+    final prescription =
+        '${accessory['sets']} sets x ${accessory['reps']} reps';
+    final weight = _parseAccessoryWeight(accessory['weight']);
+
+    if (weight == null) {
+      return prescription;
+    }
+
+    final weightText = weight == weight.roundToDouble()
+        ? weight.toInt().toString()
+        : weight.toStringAsFixed(1);
+    return '$prescription @ $weightText lbs';
+  }
+
+  double? _parseAccessoryWeight(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
   Future<void> _showEditAccessoryDialog(
     int dayNumber,
     int accessoryIndex,
     Map<String, dynamic> accessory,
     List<Map<String, dynamic>> allAccessories,
   ) async {
-    final setsController = TextEditingController(text: accessory['sets'].toString());
-    final repsController = TextEditingController(text: accessory['reps'].toString());
+    final setsController =
+        TextEditingController(text: accessory['sets'].toString());
+    final repsController =
+        TextEditingController(text: accessory['reps'].toString());
+    final currentWeight = _parseAccessoryWeight(accessory['weight']);
+    final weightController = TextEditingController(
+      text: currentWeight == null
+          ? ''
+          : currentWeight == currentWeight.roundToDouble()
+              ? currentWeight.toInt().toString()
+              : currentWeight.toString(),
+    );
 
     final exerciseId = accessory['exercise_id'] as String?;
     final exerciseName = exerciseId != null
@@ -603,6 +645,18 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
               ),
               keyboardType: TextInputType.number,
             ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: weightController,
+              decoration: const InputDecoration(
+                labelText: 'Weight',
+                suffixText: 'lbs',
+                helperText: 'Leave empty for no prescribed weight',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+            ),
           ],
         ),
         actions: [
@@ -611,7 +665,40 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
             child: const Text('Cancel'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () {
+              final sets = int.tryParse(setsController.text);
+              final reps = int.tryParse(repsController.text);
+              final weightText = weightController.text.trim();
+              final weight =
+                  weightText.isEmpty ? null : double.tryParse(weightText);
+
+              if (sets == null || sets < 1 || sets > 10) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Please enter sets between 1 and 10')),
+                );
+                return;
+              }
+
+              if (reps == null || reps < 1 || reps > 50) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content: Text('Please enter reps between 1 and 50')),
+                );
+                return;
+              }
+
+              if (weightText.isNotEmpty && (weight == null || weight < 0)) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                      content:
+                          Text('Please enter a valid weight of 0 or greater')),
+                );
+                return;
+              }
+
+              Navigator.pop(context, true);
+            },
             child: const Text('Save'),
           ),
         ],
@@ -619,8 +706,10 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
     );
 
     if (result == true) {
-      final newSets = int.tryParse(setsController.text) ?? accessory['sets'];
-      final newReps = int.tryParse(repsController.text) ?? accessory['reps'];
+      final newSets = int.parse(setsController.text);
+      final newReps = int.parse(repsController.text);
+      final weightText = weightController.text.trim();
+      final newWeight = weightText.isEmpty ? null : double.parse(weightText);
 
       // Update the accessory in the list
       final updatedAccessories = allAccessories.map((acc) {
@@ -629,6 +718,7 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
             ...acc,
             'sets': newSets,
             'reps': newReps,
+            'weight': newWeight,
           };
         }
         return acc;
@@ -716,18 +806,20 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                       children: [
                         Text(
                           'End Date',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           program.endDate != null
                               ? dateFormat.format(program.endDate!)
                               : 'Not set (ongoing)',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),
@@ -776,18 +868,20 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                       children: [
                         Text(
                           'Target Cycles',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           program.targetCycles != null
                               ? '${program.targetCycles} cycles'
                               : 'Not set (unlimited)',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),
@@ -833,7 +927,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                 ),
                 value: program.includeDeload,
                 onChanged: isActive ? (value) => _toggleDeload(value) : null,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
@@ -974,7 +1069,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Row(
                   children: [
-                    Icon(Icons.emoji_events, color: Colors.teal.shade700, size: 32),
+                    Icon(Icons.emoji_events,
+                        color: Colors.teal.shade700, size: 32),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -991,14 +1087,16 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                           const SizedBox(height: 4),
                           Text(
                             'Update your training maxes and generate the next cycle\'s workouts.',
-                            style: TextStyle(color: Colors.teal.shade800, fontSize: 12),
+                            style: TextStyle(
+                                color: Colors.teal.shade800, fontSize: 12),
                           ),
                           const SizedBox(height: 10),
                           FilledButton(
                             onPressed: _showAdvanceCycleDialog,
                             style: FilledButton.styleFrom(
                               backgroundColor: Colors.teal.shade600,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                             ),
                             child: const Text('Start Next Cycle'),
                           ),
@@ -1055,7 +1153,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                 child: InkWell(
                   onTap: () {
                     final startDate = program.startDate.toIso8601String();
-                    context.push('/workouts?programId=${program.id}&startDate=$startDate');
+                    context.push(
+                        '/workouts?programId=${program.id}&startDate=$startDate');
                   },
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
@@ -1146,7 +1245,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
     // Load current values first
     Map<String, dynamic> current;
     try {
-      current = await apiService.getCycleTrainingMaxes(widget.programId, cycleNumber);
+      current =
+          await apiService.getCycleTrainingMaxes(widget.programId, cycleNumber);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1166,7 +1266,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
     final controllers = {
       for (final k in liftKeys)
         k: TextEditingController(
-          text: current[k] != null ? (current[k] as num).toInt().toString() : '',
+          text:
+              current[k] != null ? (current[k] as num).toInt().toString() : '',
         )
     };
 
@@ -1185,7 +1286,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                     labelText: '${liftLabels[k]} (lbs)',
                     border: const OutlineInputBorder(),
                   ),
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 12),
               ],
@@ -1228,7 +1330,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
 
     setState(() => _isSaving = true);
     try {
-      await apiService.updateCycleTrainingMaxes(widget.programId, cycleNumber, updates);
+      await apiService.updateCycleTrainingMaxes(
+          widget.programId, cycleNumber, updates);
       await _loadProgramDetail();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1265,7 +1368,8 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                 ),
               ),
               TextButton.icon(
-                onPressed: () => _showEditTrainingMaxesDialog(program.currentCycle),
+                onPressed: () =>
+                    _showEditTrainingMaxesDialog(program.currentCycle),
                 icon: const Icon(Icons.edit, size: 16),
                 label: const Text('Edit'),
               ),
@@ -1305,16 +1409,18 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                       children: [
                         Text(
                           liftName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'Cycle ${tm.cycle}',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),
@@ -1353,10 +1459,16 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
           ...program.trainingDays.asMap().entries.map((entry) {
             final index = entry.key;
             final day = entry.value;
-            final dayName = day.substring(0, 1).toUpperCase() + day.substring(1);
+            final dayName =
+                day.substring(0, 1).toUpperCase() + day.substring(1);
 
             // Map day to lift
-            final lifts = ['Overhead Press', 'Deadlift', 'Bench Press', 'Squat'];
+            final lifts = [
+              'Overhead Press',
+              'Deadlift',
+              'Bench Press',
+              'Squat'
+            ];
             final lift = lifts[index % 4];
 
             return Container(
@@ -1393,16 +1505,18 @@ class _ProgramDetailScreenState extends ConsumerState<ProgramDetailScreen> {
                       children: [
                         Text(
                           dayName,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           lift,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Colors.grey[600],
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.grey[600],
+                                  ),
                         ),
                       ],
                     ),

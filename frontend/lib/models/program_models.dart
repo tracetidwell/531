@@ -31,24 +31,30 @@ class Program {
       name: json['name'].toString(),
       templateType: json['template_type'].toString(),
       startDate: DateTime.parse(json['start_date']),
-      endDate: json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
-      targetCycles: json.containsKey('target_cycles') && json['target_cycles'] != null
-          ? (json['target_cycles'] is int
-              ? json['target_cycles']
-              : int.tryParse(json['target_cycles'].toString()))
-          : null,
-      includeDeload: json.containsKey('include_deload') && json['include_deload'] != null
-          ? (json['include_deload'] is bool
-              ? json['include_deload']
-              : json['include_deload'] == 1 || json['include_deload'] == '1' || json['include_deload'] == true)
-          : true,
+      endDate:
+          json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
+      targetCycles:
+          json.containsKey('target_cycles') && json['target_cycles'] != null
+              ? (json['target_cycles'] is int
+                  ? json['target_cycles']
+                  : int.tryParse(json['target_cycles'].toString()))
+              : null,
+      includeDeload:
+          json.containsKey('include_deload') && json['include_deload'] != null
+              ? (json['include_deload'] is bool
+                  ? json['include_deload']
+                  : json['include_deload'] == 1 ||
+                      json['include_deload'] == '1' ||
+                      json['include_deload'] == true)
+              : true,
       trainingDays: List<String>.from(json['training_days']),
       status: json['status'].toString(),
-      currentCycle: json.containsKey('current_cycle') && json['current_cycle'] != null
-          ? (json['current_cycle'] is int
-              ? json['current_cycle']
-              : int.tryParse(json['current_cycle'].toString()))
-          : null,
+      currentCycle:
+          json.containsKey('current_cycle') && json['current_cycle'] != null
+              ? (json['current_cycle'] is int
+                  ? json['current_cycle']
+                  : int.tryParse(json['current_cycle'].toString()))
+              : null,
       createdAt: DateTime.parse(json['created_at']),
     );
   }
@@ -96,7 +102,9 @@ class Program {
   }
 
   String get trainingDaysDisplay {
-    return trainingDays.map((day) => day.substring(0, 3).toUpperCase()).join(', ');
+    return trainingDays
+        .map((day) => day.substring(0, 3).toUpperCase())
+        .join(', ');
   }
 }
 
@@ -148,12 +156,14 @@ class AccessoryExercise {
   final int sets;
   final int reps;
   final int? circuitGroup; // null = standalone, 1+ = circuit group number
+  final double? weight;
 
   AccessoryExercise({
     required this.exerciseId,
     required this.sets,
     required this.reps,
     this.circuitGroup,
+    this.weight,
   });
 
   Map<String, dynamic> toJson() {
@@ -162,6 +172,7 @@ class AccessoryExercise {
       'sets': sets,
       'reps': reps,
       if (circuitGroup != null) 'circuit_group': circuitGroup,
+      if (weight != null) 'weight': weight,
     };
   }
 }
@@ -232,17 +243,21 @@ class ProgramDetail {
       name: json['name'].toString(),
       templateType: json['template_type'].toString(),
       startDate: DateTime.parse(json['start_date']),
-      endDate: json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
+      endDate:
+          json['end_date'] != null ? DateTime.parse(json['end_date']) : null,
       targetCycles: json['target_cycles'] != null
           ? (json['target_cycles'] is int
               ? json['target_cycles']
               : int.tryParse(json['target_cycles'].toString()))
           : null,
-      includeDeload: json.containsKey('include_deload') && json['include_deload'] != null
-          ? (json['include_deload'] is bool
-              ? json['include_deload']
-              : json['include_deload'] == 1 || json['include_deload'] == '1' || json['include_deload'] == true)
-          : true,
+      includeDeload:
+          json.containsKey('include_deload') && json['include_deload'] != null
+              ? (json['include_deload'] is bool
+                  ? json['include_deload']
+                  : json['include_deload'] == 1 ||
+                      json['include_deload'] == '1' ||
+                      json['include_deload'] == true)
+              : true,
       status: json['status'].toString(),
       trainingDays: List<String>.from(json['training_days']),
       currentCycle: json['current_cycle'] as int,
@@ -280,7 +295,9 @@ class ProgramDetail {
   }
 
   String get trainingDaysDisplay {
-    return trainingDays.map((day) => day.substring(0, 3).toUpperCase()).join(', ');
+    return trainingDays
+        .map((day) => day.substring(0, 3).toUpperCase())
+        .join(', ');
   }
 
   String getDisplayLiftName(String lift) {
